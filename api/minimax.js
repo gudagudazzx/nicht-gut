@@ -5,24 +5,20 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  // 处理预检请求
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
-  // 只允许 POST
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  // 从环境变量获取 API Key
   const MINIMAX_API_KEY = process.env.MINIMAX_API_KEY;
   if (!MINIMAX_API_KEY) {
     console.error('MINIMAX_API_KEY is not set');
     return res.status(500).json({ error: 'Server configuration error: missing API key' });
   }
 
-  // 获取请求体
   const requestBody = req.body;
   if (!requestBody || !requestBody.text) {
     return res.status(400).json({ error: 'Missing text in request body' });
@@ -40,13 +36,15 @@ export default async function handler(req, res) {
 
     const data = await response.json();
 
-    // 检查 MiniMax 返回的状态
-    if (data?.base_resp?.status_code !== 0) {
-      console.error('MiniMax API error:', data?.base_resp?.status_msg);
-      return res.status(400).json({ error: data?.base_resp?.status_msg || 'MiniMax error' });
+    // 如果 MiniMax 返回错误，将错误信息返回给前端
+    if (!response.ok || data?.base_resp?.status_code !== 0) {
+      console.error('MiniMax error:', data);
+      return res.status(400).json({
+        error: 'MiniMax API error',
+        details: data?.base_resp?.status_msg || data,
+      });
     }
 
-    // 返回音频数据
     res.status(200).json(data);
   } catch (error) {
     console.error('Proxy error:', error);
