@@ -333,6 +333,7 @@ const TTS = (()=>{
 
   /* ── 核心修改：callMiniMax 支持代理和环境判断 ── */
   async function callMiniMax(text, role){
+    console.log('[MiniMax] Request for text:', text, 'role:', role);
     if (!text || text.trim().length === 0) return null;
 
     // 判断当前环境：本地开发还是线上部署
