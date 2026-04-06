@@ -331,7 +331,6 @@ const TTS = (()=>{
     return 'mentor';
   }
 
-<<<<<<< HEAD
   /* ── 核心修改：callMiniMax 支持代理和环境判断 ── */
   async function callMiniMax(text, role){
     if (!text || text.trim().length === 0) return null;
@@ -401,89 +400,6 @@ const TTS = (()=>{
       return null;
     }
   }
-=======
-  /* callMiniMax: fetch audio → AudioBuffer.
-     CORS note: api.minimax.io blocks browser requests from claude.ai.
-     We detect this on first call and auto-disable MiniMax,
-     falling back silently to Web Speech API.
-     _mmCorsBlocked is set on the window so it persists across all calls. */
-
-  async function callMiniMax(text, role) {
-  // 防止空文本
-  if (!text || text.trim().length === 0) return null;
-
-  const key = S.minimaxKey;
-  // 如果没有 MiniMax Key，则直接返回 null（使用 Web Speech 回退）
-  if (!key) return null;
-
-  // 判断是否使用代理：如果当前域名不是 localhost 或 127.0.0.1，则使用代理（线上环境）
-  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-  let apiUrl;
-  let headers;
-
-  if (!isLocal) {
-    // 线上环境：使用 Vercel 代理
-    apiUrl = '/api/minimax';
-    headers = {
-      'Content-Type': 'application/json',
-      // 注意：不再需要 Authorization 头，因为代理服务器会添加
-    };
-  } else {
-    // 本地开发环境：直连 MiniMax API（但可能遇到 CORS，仅用于测试）
-    apiUrl = CFG.minimax.endpoint;
-    headers = {
-      'Authorization': `Bearer ${key}`,
-      'Content-Type': 'application/json',
-    };
-  }
-
-  const vc = mmVoiceCfg(role);
-  try {
-    const res = await fetch(apiUrl, {
-      method: 'POST',
-      headers: headers,
-      body: JSON.stringify({
-        model:    CFG.minimax.model,
-        text:     text,
-        voice_id: vc.id,
-        speed:    vc.speed,
-        vol:      vc.vol,
-        pitch:    vc.pitch,
-        emotion:  vc.emotion,
-        format:   'mp3',
-        audio_sample_rate: 32000,
-        bitrate:  128000,
-      }),
-    });
-
-    if (!res.ok) {
-      console.warn('[MiniMax TTS] HTTP', res.status);
-      return null;
-    }
-
-    const data = await res.json();
-    // 代理返回的数据结构与 MiniMax 原始响应一致
-    if (data?.base_resp?.status_code !== 0 && data?.base_resp?.status_code !== undefined) {
-      console.warn('[MiniMax TTS] API error:', data?.base_resp?.status_msg);
-      return null;
-    }
-    const b64 = data.audio_file;
-    if (!b64) {
-      console.warn('[MiniMax TTS] no audio_file in response');
-      return null;
-    }
-    const binStr = atob(b64);
-    const bytes = new Uint8Array(binStr.length);
-    for (let i = 0; i < binStr.length; i++) bytes[i] = binStr.charCodeAt(i);
-    const ctx = getAudioCtx();
-    const audioBuf = await ctx.decodeAudioData(bytes.buffer);
-    return audioBuf;
-  } catch (e) {
-    console.warn('[MiniMax TTS] error:', e.message);
-    return null;
-  }
-}
->>>>>>> e6a1c6daee00be88f84a8b9892749df4bdd35227
 
   function showMiniMaxCorsNotice(){
     if(document.getElementById('mmCorsNotice')) return;
@@ -497,7 +413,6 @@ const TTS = (()=>{
       'box-shadow:0 4px 20px rgba(0,0,0,.3)','text-align:center',
       'line-height:1.5','cursor:pointer',
     ].join(';');
-<<<<<<< HEAD
     // 线上环境不再显示 CORS 错误提示（因为代理已解决）
     const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
     if (!isLocal) {
@@ -507,11 +422,6 @@ const TTS = (()=>{
         + 'Using browser voices instead. To use MiniMax, <strong>run a local server</strong> (e.g., `python -m http.server`). '
         + '<span style="opacity:.7;font-size:11px">(tap to dismiss)</span>';
     }
-=======
-    el.innerHTML = '⚠️ MiniMax voices are blocked by the browser when running on claude.ai (CORS restriction).<br>'
-      + 'Using browser voices instead. To use MiniMax, <strong>save the HTML file and open it locally</strong>. '
-      + '<span style="opacity:.7;font-size:11px">(tap to dismiss)</span>';
->>>>>>> e6a1c6daee00be88f84a8b9892749df4bdd35227
     el.addEventListener('click', ()=>el.remove());
     document.body.appendChild(el);
     setTimeout(()=>{ if(el.parentNode) el.remove(); }, 12000);
@@ -581,19 +491,11 @@ const TTS = (()=>{
   /* speak — simple fire-and-forget (used by coach/hint messages) */
   function speak(text, role){
     if(!enabled||!text) return;
-<<<<<<< HEAD
     // 注意：线上环境即使 S.minimaxKey 为空，callMiniMax 也会通过代理尝试（无需前端 Key）
     callMiniMax(text, role).then(buf=>{
       if(buf) playAudioBuffer(buf);
       else _webSpeakSimple(text,role);
     });
-=======
-    if(S.minimaxKey){
-      callMiniMax(text, role).then(buf=>{ if(buf) playAudioBuffer(buf); else _webSpeakSimple(text,role); });
-    } else {
-      _webSpeakSimple(text, role);
-    }
->>>>>>> e6a1c6daee00be88f84a8b9892749df4bdd35227
   }
 
   function _webSpeakSimple(text, role){
@@ -693,7 +595,6 @@ function showVNTextbox(text, mode, label){
 
   const readPause = Math.max(800, text.length * 18);
 
-<<<<<<< HEAD
   // 尝试 MiniMax，失败则回退 Web Speech
   return new Promise(resolve=>{
     TTS.stop();
@@ -715,40 +616,6 @@ function showVNTextbox(text, mode, label){
       setTimeout(resolve, text.length*55 + readPause);
     });
   });
-=======
-  if(S.minimaxKey && !window._mmCorsBlocked){
-    return new Promise(resolve=>{
-      TTS.stop();
-      _typeText(text, null);
-      TTS.callMiniMax(text, ttsRole).then(buf=>{
-        if(!buf){
-          clearTimeout(_typeTimer);
-          const utt = TTS.createUtterance(text, ttsRole);
-          utt.onend  = ()=>{ clearTimeout(_typeTimer); revealAllText(text); setTimeout(resolve,readPause); };
-          utt.onerror= ()=>{ clearTimeout(_typeTimer); revealAllText(text); setTimeout(resolve,readPause); };
-          _typeText(text, utt);
-          TTS.speakUtterance(utt);
-          return;
-        }
-        TTS.playAudioBuffer(buf, readPause).then(resolve);
-      }).catch(()=>{ setTimeout(resolve, text.length*55 + readPause); });
-    });
-  } else if(window.speechSynthesis){
-    return new Promise(resolve=>{
-      const utt = TTS.createUtterance(text, ttsRole);
-      utt.onend  = ()=>{ clearTimeout(_typeTimer); revealAllText(text); setTimeout(resolve,readPause); };
-      utt.onerror= (e)=>{
-        if(e.error==='interrupted'||e.error==='canceled'){ setTimeout(resolve,readPause); return; }
-        clearTimeout(_typeTimer); revealAllText(text); setTimeout(resolve,readPause);
-      };
-      _typeText(text, utt);
-      TTS.speakUtterance(utt);
-    });
-  } else {
-    _typeText(text, null);
-    return new Promise(resolve=>setTimeout(resolve, text.length*55 + readPause));
-  }
->>>>>>> e6a1c6daee00be88f84a8b9892749df4bdd35227
 }
 
 function revealAllText(text){
