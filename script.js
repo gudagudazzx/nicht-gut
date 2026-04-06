@@ -397,14 +397,15 @@ const TTS = (()=>{
         console.warn('[MiniMax TTS] API error:', data?.base_resp?.status_msg);
         return null;
       }
-
+      // 获取 Base64 音频数据
       const b64 = data?.data?.audio || data?.audio_file;
       if (!b64) {
-        console.warn('[MiniMax TTS] no audio_file in response');
+        console.warn('[MiniMax TTS] no audio in response');
         return null;
       }
-
-      const binStr = atob(b64);
+      // 清理空白字符（换行、回车、空格），避免 atob 解码失败
+      const cleanB64 = b64.replace(/\s/g, '');
+      const binStr = atob(cleanB64);
       const bytes = new Uint8Array(binStr.length);
       for (let i = 0; i < binStr.length; i++) bytes[i] = binStr.charCodeAt(i);
       const ctx = getAudioCtx();
