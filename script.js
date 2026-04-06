@@ -398,16 +398,18 @@ const TTS = (()=>{
         return null;
       }
       // 获取 Base64 音频数据
-      const b64 = data?.data?.audio || data?.audio_file;
-      if (!b64) {
+      const hexAudio = data?.data?.audio || data?.audio_file;
+      if (!hexAudio) {
         console.warn('[MiniMax TTS] no audio in response');
         return null;
       }
-      // 清理空白字符（换行、回车、空格），避免 atob 解码失败
-      const cleanB64 = b64.replace(/\s/g, '');
-      const binStr = atob(cleanB64);
-      const bytes = new Uint8Array(binStr.length);
-      for (let i = 0; i < binStr.length; i++) bytes[i] = binStr.charCodeAt(i);
+      // 去除空白字符（如果有）
+      const cleanHex = hexAudio.replace(/\s/g, '');
+      // 将 hex 字符串转换为 Uint8Array
+      const bytes = new Uint8Array(cleanHex.length / 2);
+      for (let i = 0; i < cleanHex.length; i += 2) {
+        bytes[i / 2] = parseInt(cleanHex.substr(i, 2), 16);
+      }
       const ctx = getAudioCtx();
       const audioBuf = await ctx.decodeAudioData(bytes.buffer);
       return audioBuf;
