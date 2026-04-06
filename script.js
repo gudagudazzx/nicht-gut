@@ -2,34 +2,31 @@
 
 /* ── SPRITES ── */
 const MENTOR_EXPR={
-  greet_talk:  IMGS.mentor_hello_talk,    // waving, talking
-  greet_smile: IMGS.mentor_hello_smile,   // waving, smiling
-  praise:      IMGS.mentor_praise,        // thumbs up Good Job!
-  hint_talk:   IMGS.mentor_hint_talk,     // lightbulb + talking
-  hint_smile:  IMGS.mentor_hint_smile,    // finger up, smiling
-  laugh:       IMGS.mentor_clap1,         // clapping frame 1
-  laugh_talk:  IMGS.mentor_clap2,         // clapping frame 2
+  greet_talk:  IMGS.mentor_hello_talk,
+  greet_smile: IMGS.mentor_hello_smile,
+  praise:      IMGS.mentor_praise,
+  hint_talk:   IMGS.mentor_hint_talk,
+  hint_smile:  IMGS.mentor_hint_smile,
+  laugh:       IMGS.mentor_clap1,
+  laugh_talk:  IMGS.mentor_clap2,
 };
 const CHALL_EXPR={
-  neutral:      IMGS.chall_neutral,       // calm, reading papers
-  talk:         IMGS.chall_neutral_talk,  // calm talking
-  frown:        IMGS.chall_frown,         // frowning
-  frown_talk:   IMGS.chall_frown_talk,    // frowning + talking (hard questions)
-  smile:        IMGS.chall_smile,         // slight smile (rare)
-  smile_talk:   IMGS.chall_smile_talk,    // slight smile + talking
+  neutral:      IMGS.chall_neutral,
+  talk:         IMGS.chall_neutral_talk,
+  frown:        IMGS.chall_frown,
+  frown_talk:   IMGS.chall_frown_talk,
+  smile:        IMGS.chall_smile,
+  smile_talk:   IMGS.chall_smile_talk,
 };
 
-// Friendly interviewer (new girl) — used in Gentle mode + easy Qs in Realistic
 const FRIENDLY_EXPR={
-  calm:         IMGS.fi_calm,             // calm, neutral listen
-  calm_talk:    IMGS.fi_calm_talk,        // calm talking
-  approve:      IMGS.fi_approve,          // warm smile listening
-  approve_talk: IMGS.fi_approve_talk,     // warm smile talking
-  excited_talk: IMGS.fi_highly_approve,   // excited, eyes closed, talking
+  calm:         IMGS.fi_calm,
+  calm_talk:    IMGS.fi_calm_talk,
+  approve:      IMGS.fi_approve,
+  approve_talk: IMGS.fi_approve_talk,
+  excited_talk: IMGS.fi_highly_approve,
 };
 
-/* Smooth expression crossfade — RPG-style blend */
-/* Preloaded image cache — prevents blank flash during src swap */
 const _imgCache = {};
 function preloadImg(src){
   if(!_imgCache[src]){ const i=new Image(); i.src=src; _imgCache[src]=i; }
@@ -37,15 +34,12 @@ function preloadImg(src){
 
 function setExpr(spriteId, src){
   const el=document.getElementById(spriteId);
-  if(!el || el._currentSrc===src) return;  // already showing this image
+  if(!el || el._currentSrc===src) return;
   el._currentSrc=src;
-  // Preload target if not already cached
   if(!_imgCache[src]){ const i=new Image(); i.src=src; _imgCache[src]=i; }
-  // Instant swap — no opacity flash, image already in memory
   el.style.transition='none';
   el.style.opacity='1';
   el.src=src;
-  // Tiny scale pulse to signal the change (subtle, not distracting)
   el.style.transform='scale(1.0)';
   clearTimeout(el._scaleTimer);
   el._scaleTimer=setTimeout(()=>{ el.style.transform=''; },1);
@@ -63,26 +57,22 @@ function setFriendly(expr){
   setExpr('friendlySprite', src);
 }
 
-/* Init sprites */
-// Debate opponent expressions (placeholder: mentor sprites until artwork arrives)
 const DEBATE_EXPR={
-  neutral:   IMGS.mentor_hint_smile,   // listening, arms crossed
-  talk:      IMGS.mentor_hint_talk,    // making argument
-  challenge: IMGS.mentor_greet_talk,   // challenging your point
-  agree:     IMGS.mentor_laugh,        // impressed by good point
-  fire:      IMGS.mentor_laugh_talk,   // passionate rebuttal
+  neutral:   IMGS.mentor_hint_smile,
+  talk:      IMGS.mentor_hint_talk,
+  challenge: IMGS.mentor_greet_talk,
+  agree:     IMGS.mentor_laugh,
+  fire:      IMGS.mentor_laugh_talk,
 };
-// Small talk listener expressions (placeholder: mentor sprites)
 const LISTEN_EXPR={
-  idle:      IMGS.mentor_greet_smile,  // waiting for you to speak
-  attentive: IMGS.mentor_hint_talk,    // leaning in, interested
-  respond:   IMGS.mentor_greet_talk,   // speaking gently
-  think:     IMGS.mentor_hint_smile,   // processing
-  encourage: IMGS.mentor_laugh,        // warm nod
+  idle:      IMGS.mentor_greet_smile,
+  attentive: IMGS.mentor_hint_talk,
+  respond:   IMGS.mentor_greet_talk,
+  think:     IMGS.mentor_hint_smile,
+  encourage: IMGS.mentor_laugh,
 };
 
-// Active character expression maps — swapped per scenario
-let ACTIVE_CHAR_EXPR = CHALL_EXPR;  // default: interview
+let ACTIVE_CHAR_EXPR = CHALL_EXPR;
 
 function setDebater(expr){ setExpr('challSprite', DEBATE_EXPR[expr]||DEBATE_EXPR.neutral); }
 function setListener(expr){ setExpr('challSprite', LISTEN_EXPR[expr]||LISTEN_EXPR.idle); }
@@ -90,29 +80,20 @@ function setListener(expr){ setExpr('challSprite', LISTEN_EXPR[expr]||LISTEN_EXP
 document.getElementById('mentorSprite').src  = MENTOR_EXPR.greet_smile;
 document.getElementById('challSprite').src   = CHALL_EXPR.neutral;
 document.getElementById('friendlySprite').src = FRIENDLY_EXPR.calm;
-// Desk is drawn into sprites — no separate desk element needed
 
-/* ── CONFIG ── */
 const CFG={
   API_TIMEOUT_MS:12000,
   MAX_RETRIES:3,
   DEBATE_ROUNDS:6,
   ST_TURNS:8,
-  // MiniMax voice IDs for each character (English voices)
-  // Full list: https://platform.minimax.io/docs/faq/system-voice-id
   minimax:{
-    model: 'speech-02-turbo',   // turbo = fast (real-time feel); hd = higher quality
+    model: 'speech-02-turbo',
     endpoint: 'https://api.minimax.io/v1/t2a_v2',
     voices:{
-      // Interviewer — calm, authoritative, measured male voice (English)
       challenger: { id:'English_magnetic_voiced_man', speed:0.90, vol:1.0, pitch:0,  emotion:'neutral' },
-      // Mentor — warm, encouraging female voice (English)
       mentor:     { id:'English_radiant_girl',        speed:0.95, vol:1.0, pitch:0,  emotion:'happy'   },
-      // Debater — energetic, passionate voice (English)
       debater:    { id:'English_Debator',             speed:1.05, vol:1.0, pitch:0,  emotion:'happy'   },
-      // Listener — gentle, soft female voice (English)
       listener:   { id:'English_CalmWoman',           speed:0.92, vol:1.0, pitch:-1, emotion:'neutral' },
-      // Friendly interviewer — warm, professional female voice (English)
       friendly:   { id:'English_radiant_girl',        speed:0.93, vol:1.0, pitch:0,  emotion:'happy'   },
     }
   },
@@ -122,18 +103,17 @@ const CFG={
   },
   voice:{
     maxDur:  {gentle:50000,medium:45000,hardcore:32000},
-    silenceDly: 3800,   /* ms of silence → auto-submit */
+    silenceDly: 3800,
     minWords:   5,
     hcCutoffChance: 0.28,
     hcCutoffMin:12000, hcCutoffMax:22000,
   },
 };
 
-/* ── STATE ── */
 const S={
   scenario:'interview',
   apiKey:'', provider:'deepseek',
-  minimaxKey:'',   // MiniMax TTS API key (separate from AI key)
+  minimaxKey:'',
   identity:'',speciality:'',resumeText:'',position:'',goal:'',company:'',
   intensity:'medium', mentorMode:'auto',
   questions:[], qLog:[], qIndex:0, retryCount:0,
@@ -145,8 +125,7 @@ const S={
   feedbackData:null, advancedPhrases:[],
   wpIndex:0, wpRec:null, wpTranscript:'',
   srsWords:[],
-  // 错误练习相关
-  practiceErrors: [],     // 存储从对话中提取的错误
+  practiceErrors: [],
   practiceIndex: 0,
   epRecognition: null,
   epCurrentAnswer: '',
@@ -154,7 +133,6 @@ const S={
 
 let recognition = null;
 
-/* ── STORAGE ── */
 const PROF_KEY='mm_v5_profile';
 const SRS_KEY ='mm_v5_srs';
 function saveProfile(){
@@ -176,12 +154,9 @@ function saveSRS(ws){
   try{localStorage.setItem(SRS_KEY,JSON.stringify(S.srsWords));}catch{}
 }
 (()=>{try{S.srsWords=JSON.parse(localStorage.getItem(SRS_KEY)||'[]');}catch{}})();
-// Auto-restore API key from dedicated slot (survives resets)
 (()=>{ try{ const k=localStorage.getItem('mm_apikey')||''; if(k) S.apiKey=k; }catch{} })();
-// Auto-restore MiniMax key
 (()=>{ try{ const k=localStorage.getItem('mm_minimaxkey')||''; if(k) S.minimaxKey=k; }catch{} })();
 
-/* ── DOM HELPERS ── */
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 function toggleApiKey(){
@@ -195,15 +170,12 @@ function showScreen(id){
     .forEach(s=>$(s)?.classList.remove('active'));
   $(id).classList.add('active');
   TTS.stop();
-  // Hide VN textbox when leaving arena
   if(id !== 'arenaScreen') hideVNTextbox();
 }
 function showLoad(m){$('loadingMsg').textContent=m||'Thinking…';$('loadingVeil').classList.add('show');}
 function hideLoad(){$('loadingVeil').classList.remove('show');}
 function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 
-/* ── CHARACTER POSITIONING ── */
-/* All positions computed from current stage dimensions */
 function stageSize(){
   const panel=$('leftPanel')||$('stage');
   if(!panel) return {w:window.innerWidth,h:window.innerHeight};
@@ -212,27 +184,21 @@ function stageSize(){
 function isMobile(){ return window.innerWidth <= 600; }
 function isLandscape(){ return window.innerWidth > window.innerHeight; }
 
-/* posInterviewers: manage both interviewer characters based on intensity + question difficulty */
-// posInterviewers: legacy, superseded by direct posChar calls
 function posInterviewers(difficulty){
-  // difficulty: 'easy' | 'hard' | 'gentleOnly'
   const {w} = stageSize();
   const mob = isMobile();
   const cW  = mob ? Math.min(w*0.85, 340) : Math.min(480, w*0.70);
   const fW  = mob ? Math.min(w*0.65, 260) : Math.min(380, w*0.55);
 
   if(S.intensity === 'gentle' || difficulty === 'gentleOnly'){
-    // Gentle mode: only friendly interviewer, centered, full opacity
     posChar('friendlyChar', {left:(w-fW)/2, width:fW, opacity:1});
-    posChar('challChar',    {left:w+cW+80,  width:cW, opacity:0}); // off-screen
+    posChar('challChar',    {left:w+cW+80,  width:cW, opacity:0});
   } else if(difficulty === 'hard'){
-    // Hard question: stern interviewer center, friendly fades to left
     const mob2 = isMobile();
     posChar('challChar',    {left:(w-cW)/2, width:cW, opacity:1});
-    const fLeft = mob2 ? -fW*0.4 : w*0.02;  // peek from left edge
+    const fLeft = mob2 ? -fW*0.4 : w*0.02;
     posChar('friendlyChar', {left:fLeft,    width:fW, opacity:0.35});
   } else {
-    // Easy question in medium/hardcore: friendly center, stern off-screen
     posChar('friendlyChar', {left:(w-fW)/2, width:fW, opacity:1});
     posChar('challChar',    {left:w+cW+80,  width:cW, opacity:0});
   }
@@ -241,7 +207,6 @@ function posInterviewers(difficulty){
 function posChar(id,cfg){
   const el=$(id);
   if(!el) return;
-  // New layout: position via CSS flex — only control opacity + dim state
   const op = cfg.opacity !== undefined ? cfg.opacity : 1;
   el.style.opacity = op;
   el.classList.toggle('dimmed', op < 0.5 && op > 0);
@@ -269,20 +234,9 @@ function rightSmall(id, w=240){
   posChar(id,{left:sw-w-16, width:w, opacity:1});
 }
 
-/* ── TTS (TEXT-TO-SPEECH) SYSTEM ── */
-/* Global CORS block flag — set true once MiniMax CORS fails, prevents retries */
 window._mmCorsBlocked = false;
 
-/* ── TTS MODULE (MiniMax-first, Web Speech fallback) ──────────────
-   Priority:
-   1. MiniMax API  — if minimaxKey is set → rich, realistic voices
-   2. Web Speech API — browser built-in fallback (always available)
-   MiniMax returns base64 MP3 → decoded to AudioBuffer → played via Web Audio API
-   This avoids <audio> element delays and gives precise onend timing.
-──────────────────────────────────────────────────────────────── */
 const TTS = (()=>{
-
-  /* ── WEB SPEECH FALLBACK (unchanged from before) ── */
   const synth = window.speechSynthesis;
   let voices = [], challVoice = null, mentorVoice = null;
   let enabled = true;
@@ -298,7 +252,6 @@ const TTS = (()=>{
   loadVoices();
   if(synth.onvoiceschanged!==undefined) synth.onvoiceschanged=loadVoices;
 
-  /* ── WEB AUDIO CONTEXT (for MiniMax MP3 playback) ── */
   let _audioCtx = null;
   let _currentSource = null;
   function getAudioCtx(){
@@ -309,44 +262,33 @@ const TTS = (()=>{
     return _audioCtx;
   }
 
-  /* ── MINIMAX TTS ── */
-  // roleToVoice: maps TTS role string to CFG.minimax.voices entry
   function mmVoiceCfg(role){
     const m = CFG.minimax.voices;
     if(role==='challenger') return m.challenger;
     if(role==='debater')    return m.debater;
     if(role==='listener')   return m.listener;
-    return m.mentor;  // default: mentor / hint
+    return m.mentor;
   }
 
-  // Determine the role from scenario + who is speaking
   function roleForMode(mode){
     if(mode==='chall'){
       if(S.scenario==='debate')    return 'debater';
       if(S.scenario==='smalltalk') return 'listener';
-      // Interview: gentle mode uses friendly voice; hard Qs in medium use challenger
       if(S._usingFriendly)         return 'friendly';
       return 'challenger';
     }
     return 'mentor';
   }
 
-  /* ── 核心修改：callMiniMax 支持代理和环境判断 ── */
   async function callMiniMax(text, role){
-    console.log('[MiniMax] Request for text:', text, 'role:', role);
     if (!text || text.trim().length === 0) return null;
-
-    // 判断当前环境：本地开发还是线上部署
     const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
     let apiUrl;
     let headers;
-
     if (!isLocal) {
-      // 线上环境（Vercel）：使用代理，不需要前端 API Key
       apiUrl = '/api/minimax';
       headers = { 'Content-Type': 'application/json' };
     } else {
-      // 本地开发：需要用户填写 MiniMax Key
       const key = S.minimaxKey;
       if (!key) return null;
       apiUrl = CFG.minimax.endpoint;
@@ -355,7 +297,6 @@ const TTS = (()=>{
         'Content-Type': 'application/json',
       };
     }
-
     const vc = mmVoiceCfg(role);
     try {
       const res = await fetch(apiUrl, {
@@ -374,12 +315,8 @@ const TTS = (()=>{
           bitrate:  128000,
         }),
       });
-
-      // 获取响应文本并打印（用于调试）
       const responseText = await res.text();
       console.log('[MiniMax] Response body:', responseText);
-
-      // 尝试解析 JSON
       let data;
       try {
         data = JSON.parse(responseText);
@@ -387,31 +324,37 @@ const TTS = (()=>{
         console.warn('[MiniMax] Failed to parse response as JSON');
         return null;
       }
-
       if (!res.ok) {
         console.warn('[MiniMax TTS] HTTP', res.status);
         return null;
       }
-
       if (data?.base_resp?.status_code !== 0 && data?.base_resp?.status_code !== undefined) {
         console.warn('[MiniMax TTS] API error:', data?.base_resp?.status_msg);
         return null;
       }
-      // 获取 Base64 音频数据
+      // hex 编码的音频数据
       const hexAudio = data?.data?.audio || data?.audio_file;
       if (!hexAudio) {
         console.warn('[MiniMax TTS] no audio in response');
         return null;
       }
-      // 去除空白字符（如果有）
       const cleanHex = hexAudio.replace(/\s/g, '');
-      // 将 hex 字符串转换为 Uint8Array
       const bytes = new Uint8Array(cleanHex.length / 2);
       for (let i = 0; i < cleanHex.length; i += 2) {
         bytes[i / 2] = parseInt(cleanHex.substr(i, 2), 16);
       }
       const ctx = getAudioCtx();
-      const audioBuf = await ctx.decodeAudioData(bytes.buffer);
+      let audioBuf;
+      try {
+        audioBuf = await ctx.decodeAudioData(bytes.buffer);
+      } catch (decodeError) {
+        console.warn('[MiniMax TTS] decodeAudioData failed, falling back to Audio element', decodeError);
+        const blob = new Blob([bytes], { type: 'audio/mpeg' });
+        const url = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+        audio.play();
+        return null;
+      }
       return audioBuf;
     } catch (e) {
       console.warn('[MiniMax TTS] error:', e.message);
@@ -431,7 +374,6 @@ const TTS = (()=>{
       'box-shadow:0 4px 20px rgba(0,0,0,.3)','text-align:center',
       'line-height:1.5','cursor:pointer',
     ].join(';');
-    // 线上环境不再显示 CORS 错误提示（因为代理已解决）
     const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
     if (!isLocal) {
       el.innerHTML = '✅ MiniMax voices are enabled via secure proxy.<br>Enjoy the natural speech! (tap to dismiss)';
@@ -445,8 +387,6 @@ const TTS = (()=>{
     setTimeout(()=>{ if(el.parentNode) el.remove(); }, 12000);
   }
 
-  /* playAudioBuffer: plays a decoded AudioBuffer, returns a Promise
-     that resolves when playback finishes + optional readPause */
   function playAudioBuffer(buf, readPause=0){
     return new Promise(resolve=>{
       if(!buf){ resolve(); return; }
@@ -468,8 +408,6 @@ const TTS = (()=>{
     if(_currentSource){ try{ _currentSource.stop(); }catch{} _currentSource=null; }
   }
 
-  /* ── PUBLIC API ── */
-
   function stop(){
     stopMiniMax();
     synth.cancel();
@@ -477,7 +415,6 @@ const TTS = (()=>{
 
   function setEnabled(v){ enabled=v; if(!v) stop(); }
 
-  /* createUtterance — returns a Web Speech utterance (fallback only) */
   function createUtterance(text, role){
     const u = new SpeechSynthesisUtterance(text);
     if(role==='challenger'||role==='debater'){
@@ -488,40 +425,60 @@ const TTS = (()=>{
     return u;
   }
 
-  /* speakUtterance — Web Speech fallback with iOS keepalive */
   function speakUtterance(u){
     if(!enabled||!u) return;
     synth.cancel();
     const isIOS=/iP(hone|ad|od)/.test(navigator.userAgent);
     let _iosKA=null;
     if(isIOS){ _iosKA=setInterval(()=>{ if(synth.speaking&&synth.paused) synth.resume(); },200); }
-    const wrapEnd=(orig)=>(e)=>{ clearInterval(_iosKA); if(orig) orig(e); };
-    const wrapErr=(orig)=>(e)=>{ clearInterval(_iosKA); if(orig) orig(e); };
-    const suppressedErr = u.onerror;
     u.onerror = (e)=>{
       if(e.error==='interrupted'||e.error==='canceled'||e.error==='not-allowed') return;
-      if(suppressedErr) suppressedErr(e);
+      console.warn('[TTS] error:', e.error);
     };
-    u.onend  = wrapEnd(u.onend);
+    u.onend = ()=>{ clearInterval(_iosKA); };
     setTimeout(()=>{ synth.speak(u); }, 50);
   }
 
-  /* speak — simple fire-and-forget (used by coach/hint messages) */
+  // 队列 + Promise 版 speak
+  let _isPlaying = false;
+  let _pendingQueue = [];
+
   function speak(text, role){
-    if(!enabled||!text) return;
-    // 注意：线上环境即使 S.minimaxKey 为空，callMiniMax 也会通过代理尝试（无需前端 Key）
-    callMiniMax(text, role).then(buf=>{
-      if(buf) playAudioBuffer(buf);
-      else _webSpeakSimple(text,role);
-    });
+    if (!enabled || !text) return Promise.resolve();
+    const play = () => {
+      _isPlaying = true;
+      return callMiniMax(text, role).then(buf => {
+        if (buf) {
+          return playAudioBuffer(buf);
+        } else {
+          return _webSpeakSimple(text, role);
+        }
+      }).finally(() => {
+        _isPlaying = false;
+        if (_pendingQueue.length) {
+          const next = _pendingQueue.shift();
+          speak(next.text, next.role).then(next.resolve).catch(next.reject);
+        }
+      });
+    };
+    if (_isPlaying) {
+      return new Promise((resolve, reject) => {
+        _pendingQueue.push({ text, role, resolve, reject });
+      });
+    } else {
+      return play();
+    }
   }
 
   function _webSpeakSimple(text, role){
-    if(!voices.length) loadVoices();
-    synth.cancel();
-    const u = createUtterance(text, role);
-    u.onerror = (e)=>{ if(e.error!=='interrupted' && e.error!=='canceled') console.warn('[TTS] error:',e.error); };
-    setTimeout(()=>synth.speak(u), 80);
+    return new Promise((resolve) => {
+      if(!voices.length) loadVoices();
+      synth.cancel();
+      const u = createUtterance(text, role);
+      u.onend = () => resolve();
+      u.onerror = () => resolve();
+      setTimeout(()=>synth.speak(u), 80);
+    });
   }
 
   return { speak, stop, setEnabled, createUtterance, speakUtterance,
@@ -532,22 +489,18 @@ const TTS = (()=>{
   };
 })();
 
-/* ── VN TEXTBOX CONTROLLER ── */
 let _typeTimer=null;
 function _typeText(text, utt){
   clearTimeout(_typeTimer);
   const el=$('vntbText');
   if(!el) return;
   el.textContent='';
-
   const cur=document.createElement('span');
   cur.className='vntb-cursor';
   el.appendChild(cur);
-
   const spd = utt ? Math.round(55 / (utt.rate || 0.9)) : 55;
   let pos = 0;
   let _done = false;
-
   function revealTo(idx){
     if(_done) return;
     idx = Math.min(idx, text.length);
@@ -562,7 +515,6 @@ function _typeText(text, utt){
       cur.remove();
     }
   }
-
   function tick(){
     if(_done) return;
     if(pos < text.length){
@@ -571,7 +523,6 @@ function _typeText(text, utt){
     }
   }
   tick();
-
   if(utt){
     utt.onboundary = (e)=>{
       if(_done || e.name !== 'word') return;
@@ -583,6 +534,23 @@ function _typeText(text, utt){
     utt.onend = ()=>{ clearTimeout(_typeTimer); revealTo(text.length); };
     utt.onerror = (e)=>{ if(e.error!=='interrupted'&&e.error!=='canceled') console.warn('[TTS] error:', e.error); };
   }
+}
+
+function revealAllText(text){
+  const el=$('vntbText');
+  if(!el) return;
+  el.textContent=text;
+  const cur=el.querySelector('.vntb-cursor');
+  if(cur) cur.remove();
+  clearTimeout(_typeTimer);
+}
+
+function hideVNTextbox(){
+  const el=$('vntbText');
+  if(el) el.textContent='';
+  const dotEl=$('speakerDot'); if(dotEl) dotEl.classList.remove('speaking');
+  clearTimeout(_typeTimer);
+  TTS.stop();
 }
 
 function showVNTextbox(text, mode, label){
@@ -613,50 +581,40 @@ function showVNTextbox(text, mode, label){
 
   const readPause = Math.max(800, text.length * 18);
 
-  // 尝试 MiniMax，失败则回退 Web Speech
-  return new Promise(resolve=>{
+  return new Promise(resolve => {
     TTS.stop();
+    // 开始打字效果
     _typeText(text, null);
-    TTS.callMiniMax(text, ttsRole).then(buf=>{
-      if(buf){
-        TTS.playAudioBuffer(buf, readPause).then(resolve);
-      } else {
-        // 回退到 Web Speech
+    // 播放语音，等待完成
+    TTS.speak(text, ttsRole).then(() => {
+      // 语音播放完毕，强制显示剩余文字
+      revealAllText(text);
+      setTimeout(resolve, readPause);
+    }).catch(() => {
+      // 如果 MiniMax 失败，回退到 Web Speech
+      clearTimeout(_typeTimer);
+      const utt = TTS.createUtterance(text, ttsRole);
+      utt.onend = () => {
         clearTimeout(_typeTimer);
-        const utt = TTS.createUtterance(text, ttsRole);
-        utt.onend  = ()=>{ clearTimeout(_typeTimer); revealAllText(text); setTimeout(resolve,readPause); };
-        utt.onerror= ()=>{ clearTimeout(_typeTimer); revealAllText(text); setTimeout(resolve,readPause); };
-        _typeText(text, utt);
-        TTS.speakUtterance(utt);
-      }
-    }).catch(()=>{
-      // 网络错误等，回退
-      setTimeout(resolve, text.length*55 + readPause);
+        revealAllText(text);
+        setTimeout(resolve, readPause);
+      };
+      utt.onerror = () => {
+        clearTimeout(_typeTimer);
+        revealAllText(text);
+        setTimeout(resolve, readPause);
+      };
+      _typeText(text, utt);
+      TTS.speakUtterance(utt);
     });
   });
 }
 
-function revealAllText(text){
-  const el=$('vntbText');
-  if(!el) return;
-  el.textContent=text;
-  const cur=el.querySelector('.vntb-cursor');
-  if(cur) cur.remove();
-  clearTimeout(_typeTimer);
-}
-function hideVNTextbox(){
-  const el=$('vntbText');
-  if(el) el.textContent='';
-  const dotEl=$('speakerDot'); if(dotEl) dotEl.classList.remove('speaking');
-  clearTimeout(_typeTimer);
-  TTS.stop();
-}
-
-function showChallBubble(text){ showVNTextbox(text,'chall'); }
+function showChallBubble(text){ return showVNTextbox(text,'chall'); }
 function hideChallBubble()    { hideVNTextbox(); }
-function showMentorBubble(text){ showVNTextbox(text,'mentor'); }
+function showMentorBubble(text){ return showVNTextbox(text,'mentor'); }
 function hideMentorBubble()   { hideVNTextbox(); }
-function showMentorHint(text, label){ showVNTextbox(text,'hint',label); }
+function showMentorHint(text, label){ return showVNTextbox(text,'hint',label); }
 function hideMentorHint()     { hideVNTextbox(); }
 
 /* ── API LAYER ── */
