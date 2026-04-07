@@ -93,54 +93,38 @@
         <textarea class="fta" id="fiResume" rows="3" placeholder="Paste key highlights: internships, achievements, projects…"></textarea>
       </div>
     </div>
-<!-- Step 2: Interview details (interview-only) -->
-   <div class="step-card interview-only" style="animation-delay:.18s">
-  <div class="step-head">
-    <div class="step-num">2</div>
-    <div>
-      <div class="step-title">What's the interview for?</div>
-      <div class="step-sub">The more specific, the sharper the questions.</div>
+
+    <!-- Step 2: Interview details (interview-only) -->
+    <div class="step-card interview-only" style="animation-delay:.18s">
+      <div class="step-head">
+        <div class="step-num">2</div>
+        <div>
+          <div class="step-title">What's the interview for?</div>
+          <div class="step-sub">The more specific, the sharper the questions.</div>
+        </div>
+      </div>
+      <div class="fg">
+        <label class="fl">Target Position / Role</label>
+        <input class="fi" id="fiPosition" placeholder="e.g. Software Engineer Intern, Student Council…"/>
+      </div>
+      <div class="fg">
+        <label class="fl">Your Goal for This Session</label>
+        <textarea class="fta" id="fiGoal" rows="2" placeholder="e.g. I freeze on 'tell me about yourself'. I want to practise leadership questions."></textarea>
+      </div>
+      <div class="fg">
+        <label class="fl">Company / Organisation <span style="font-size:13px;font-weight:400;color:var(--ink-dim)">(optional)</span></label>
+        <input class="fi" id="fiCompany" placeholder="e.g. Google, McKinsey, City University…"/>
+      </div>
+      <div class="fg" style="margin-top: 12px;">
+        <label class="fl">Your Resume <span style="font-size:13px;font-weight:400;color:var(--ink-dim)">(optional)</span></label>
+        <input type="file" id="resumeFile" accept=".pdf,.doc,.docx" style="display:none;">
+        <div class="fi" id="resumeBtn" style="cursor:pointer; display:flex; align-items:center; justify-content:space-between; background:var(--paper2); border:1px dashed var(--ink-faint); height:auto; min-height:40px;" onclick="document.getElementById('resumeFile').click()">
+          <span id="fileNameDisplay" style="color:var(--ink-dim); font-size:14px;">+ Click to attach resume (PDF/Word)</span>
+          <span style="font-size:12px; opacity:0.5;">📎</span>
+        </div>
+      </div>
     </div>
-  </div>
 
-  <div class="fg">
-    <label class="fl">Target Position / Role</label>
-    <input class="fi" id="fiPosition" placeholder="e.g. Software Engineer Intern, Student Council…"/>
-  </div>
-
-  <div class="fg">
-    <label class="fl">Your Goal for This Session</label>
-    <textarea class="fta" id="fiGoal" rows="2" placeholder="e.g. I freeze on 'tell me about yourself'. I want to practise leadership questions."></textarea>
-  </div>
-
-  <div class="fg">
-    <label class="fl">Company / Organisation <span style="font-size:13px;font-weight:400;color:var(--ink-dim)">(optional)</span></label>
-    <input class="fi" id="fiCompany" placeholder="e.g. Google, McKinsey, City University…"/>
-  </div>
-
-  <div class="fg" style="margin-top: 12px;">
-    <label class="fl">Your Resume <span style="font-size:13px;font-weight:400;color:var(--ink-dim)">(optional)</span></label>
-    
-    <input type="file" id="resumeFile" accept=".pdf,.doc,.docx" style="display:none;">
-    
-    <div class="fi" id="resumeBtn" style="cursor:pointer; display:flex; align-items:center; justify-content:space-between; background:var(--paper2); border:1px dashed var(--ink-faint); height:auto; min-height:40px;" onclick="document.getElementById('resumeFile').click()">
-      <span id="fileNameDisplay" style="color:var(--ink-dim); font-size:14px;">+ Click to attach resume (PDF/Word)</span>
-      <span style="font-size:12px; opacity:0.5;">📎</span>
-    </div>
-  </div>
-
-  <script>
-    document.getElementById('resumeFile').onchange = function() {
-      if(this.files && this.files[0]) {
-        const name = this.files[0].name;
-        const display = document.getElementById('fileNameDisplay');
-        display.textContent = "📄 " + name;
-        display.style.color = "var(--green)"; 
-        document.getElementById('resumeBtn').style.borderColor = "var(--green)";
-      }
-    };
-  </script>
-</div>
     <!-- Step 3: Settings -->
     <div class="step-card" style="animation-delay:.26s">
       <div class="step-head"><div class="step-num">3</div>
@@ -196,7 +180,6 @@
     <div class="prep-title" id="prepTitle">Preparing your session…</div>
     <div class="prep-status" id="prepStatus">Analysing your profile</div>
     <div class="prep-bar"><div class="prep-bar-fill" id="prepBarFill" style="width:0%"></div></div>
-    <!-- 新增分析区域，解决 script.js 中的 innerHTML 报错 -->
     <div class="prep-analysis" id="prepAnalysis" style="display:none">
       <div class="pa-label">📋 Focus Areas</div>
       <div id="paItems"></div>
@@ -214,6 +197,7 @@
       <span class="tb-tag tb-teal" id="ttsPill" style="display:none">🎙 MiniMax</span>
       <span class="tb-tag tb-red" id="qPill">Q 1 / ?</span>
       <span class="tb-tag tb-green" id="statusPill">In Progress</span>
+      <span class="tb-tag tb-green" id="scriptToggleBtn" style="cursor:pointer;">📜 Script: ON</span>
     </div>
     <button class="end-btn" id="endBtn">Finish →</button>
   </div>
@@ -256,7 +240,6 @@
       <div id="scriptArea">
         <div class="debate-topic-card" id="debateTopicCard"></div>
         <div class="st-topics" id="stTopics"></div>
-        <!-- Hidden compat elements — JS still reads these IDs -->
         <div id="vntbSpeaker" class="vntb-speaker" style="display:none"></div>
         <div id="vntbText" class="vntb-text"></div>
       </div>
@@ -286,7 +269,6 @@
 
   </div><!-- /arenaBody -->
 
-  <!-- Debate / small talk extras (hidden in interview mode) -->
   <div id="vntextbox" style="display:none"><div></div><div></div></div>
 
 </div><!-- /arenaScreen -->
@@ -386,9 +368,7 @@
         <span id="epProgress" class="ep-progress">1 / 3</span>
       </div>
       <div id="epCard" class="ep-card">
-        <div class="ep-error-original" id="epErrorOriginal">❌ 你说：...</div>
-        <div class="ep-correction" id="epCorrection">✅ 应该说：...</div>
-        <div class="ep-tip" id="epTip">💡 小提示</div>
+        <!-- 动态内容会由 JS 填充 -->
       </div>
       <div class="ep-prompt" id="epPrompt">
         请用正确的表达造一个新句子，或者翻译下面的中文：
@@ -413,6 +393,7 @@
         <div id="epMicStatus" class="ep-mic-status">Tap to speak</div>
         <button id="epNextBtn" class="ep-next-btn" style="display: none;">➡ 下一题</button>
         <button id="epDoneBtn" class="ep-done-btn">✓ 完成练习</button>
+        <button id="viewMyBankBtn" class="ep-bank-btn" style="margin-left: 8px;">📚 我的题库</button>
       </div>
     </div>
   </div>
@@ -424,7 +405,7 @@
   <div class="loading-msg" id="loadingMsg">Thinking…</div>
 </div>
 
-<!-- ── SCRIPTS — order matters: imgs.js first, then script.js ── -->
+<!-- Scripts -->
 <script src="imgs.js"></script>
 <script src="script.js"></script>
 
