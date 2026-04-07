@@ -2096,7 +2096,7 @@ Return ONLY valid JSON (no markdown):
 
   await generateOptimizationExercises(sessionSummary);
 }
-// 生成优化表达练习（汉译英模式，包含中文句子 + 关键词组）
+// 生成优化表达练习（包含多种近义词组/优化表达）
 async function generateOptimizationExercises(sessionSummary) {
   if (!sessionSummary || sessionSummary === 'No recorded exchanges.') return;
 
@@ -2104,13 +2104,12 @@ async function generateOptimizationExercises(sessionSummary) {
 
 For each original sentence/phrase, provide:
 - original: the exact user wording
-- better: a more natural/advanced/correct version
-- explanation: why the better version improves clarity, accuracy, or naturalness (in English, 1 sentence)
-- chinese_hint: a Chinese sentence that leads the learner to produce the "better" version, including a key phrase from the better version. Format like: "请用 'better phrase' 翻译：{relevant Chinese sentence}"
+- better: a more natural/advanced/correct version (this will be the primary suggested expression)
+- explanation: why the better version improves clarity, accuracy, or naturalness (in English, 1-2 sentences, clear and readable)
+- alternatives: an array of 2-3 additional ways to express the same idea (synonyms or alternative phrasings) that are equally natural or advanced. Each alternative should be a short phrase or sentence.
+- chinese_hint: a Chinese sentence that leads the learner to produce the "better" version, including a key phrase from the better version. Format: "请用 '...' 翻译：{relevant Chinese sentence}"
 
-Example:
-If original = "I think I'm a good fit.", better = "I believe my skills align well with this role."
-Then chinese_hint = "请用 'my skills align well with this role' 翻译：我认为我的技能与这个职位非常匹配。"
+Important: Focus on collocation errors, overly basic expressions, and unnatural phrasing. Ignore minor typos that could be due to speech recognition.
 
 Return ONLY valid JSON array:
 [
@@ -2118,6 +2117,7 @@ Return ONLY valid JSON array:
     "original": "...",
     "better": "...",
     "explanation": "...",
+    "alternatives": ["alternative 1", "alternative 2", "alternative 3"],
     "chinese_hint": "..."
   }
 ]
@@ -2127,7 +2127,7 @@ ${sessionSummary}`;
 
   let exercises = [];
   if (S.apiKey) {
-    const raw = await callAPI([{ role: 'user', content: prompt }], prompt, 1200);
+    const raw = await callAPI([{ role: 'user', content: prompt }], prompt, 1500);
     if (raw) {
       try {
         const cleaned = raw.replace(/```json|```/g, '').trim();
@@ -2137,11 +2137,17 @@ ${sessionSummary}`;
     }
   }
   if (!exercises.length) {
+    // 默认 fallback 练习，包含 alternatives
     exercises = [
       {
         original: "I think I'm a good fit.",
         better: "I believe my skills align well with this role.",
         explanation: "Using 'believe' is more confident than 'think', and 'align with' is more professional.",
+        alternatives: [
+          "I am confident that my qualifications match this position.",
+          "My background seems well-suited for this role.",
+          "I feel that my experience fits perfectly here."
+        ],
         chinese_hint: "请用 'my skills align well with this role' 翻译：我认为我的技能与这个职位非常匹配。"
       }
     ];
@@ -2152,6 +2158,7 @@ ${sessionSummary}`;
     original: ex.original,
     better: ex.better,
     explanation: ex.explanation,
+    alternatives: ex.alternatives || [],
     chinese_hint: ex.chinese_hint,
     attempts: [],
     mastered: false,
@@ -2159,66 +2166,91 @@ ${sessionSummary}`;
     retryCount: 0
   }));
 
+  // 保存到个人题库
   S.myQuestionBank = S.practiceErrors.map(e => ({ ...e }));
   saveBank(S.myQuestionBank);
 
+  // 确保按钮显示（即使尚未生成完，但调用此函数时已生成）
   const errorPracticeBtn = document.getElementById('errorPracticeBtn');
   if (errorPracticeBtn) errorPracticeBtn.style.display = 'inline-flex';
 }
 
-// 评估汉译英答案
-async function evaluateTranslation(userAnswer, expectedBetter, explanation) {
+// 评估用户翻译是否正确（基于语义，忽略语音识别错误）
+async function evaluateTranslation(userAnswer, expectedBetter, alternatives, original) {
+  // 如果答案太短或包含明显识别错误标记（如单个字母、无意义词），直接返回“重试”提示，不计入错误
+  const cleanAnswer = userAnswer.trim().toLowerCase();
+  if (cleanAnswer.length < 5 || /^(?:uh|um|eh|a|an|the|and|so|well|you know)$/i.test(cleanAnswer)) {
+    return { correct: false, feedback: "⚠️ 听不清或识别错误，请再说一遍（尽量清晰完整）。", isRecError: true };
+  }
+
+  // 先用 AI 评估（如果有 API key）
   if (S.apiKey) {
     const prompt = `You are an English teacher. The learner was asked to translate a Chinese sentence into English. The expected correct answer is: "${expectedBetter}". The user's answer: "${userAnswer}".
 
-Is the user's answer essentially correct (allowing small typos, word order variations, or minor differences that don't change meaning)? Return ONLY JSON: {"correct": true/false, "feedback": "a short constructive message (in English) either praising or giving a hint"}`;
-    const raw = await callAPI([{ role: 'user', content: userAnswer }], prompt, 150);
+Please judge if the user's answer is semantically correct and conveys the same meaning as the expected answer, even if there are small typos or word order differences. Ignore minor speech recognition errors (e.g., repeated words like "uh", "um").
+
+Return ONLY JSON: {"correct": true/false, "feedback": "a short constructive message (in English) either praising or giving a hint, focusing on collocation or naturalness"}`;
+    const raw = await callAPI([{ role: 'user', content: userAnswer }], prompt, 200);
     if (raw) {
       try {
         const res = JSON.parse(raw.replace(/```json|```/g, '').trim());
-        return { correct: res.correct, feedback: res.feedback };
+        return { correct: res.correct, feedback: res.feedback, isRecError: false };
       } catch(e) {}
     }
   }
-  // 降级：简单模糊匹配
-  const normalize = (s) => s.toLowerCase().replace(/[^\w\s]/g, '').trim();
+
+  // 降级：模糊匹配（关键词匹配，忽略识别错误）
+  const normalize = (s) => s.toLowerCase().replace(/[^\w\s]/g, '').replace(/\b(uh|um|ah|er|mm|hmm)\b/g, '').trim();
   const normBetter = normalize(expectedBetter);
-  const normAnswer = normalize(userAnswer);
-  const betterWords = normBetter.split(/\s+/);
+  const normAnswer = normalize(cleanAnswer);
+  const betterWords = normBetter.split(/\s+/).filter(w => w.length > 2);
   let matchCount = 0;
   for (let w of betterWords) {
-    if (w.length > 2 && normAnswer.includes(w)) matchCount++;
+    if (normAnswer.includes(w)) matchCount++;
   }
-  const correct = (matchCount / betterWords.length) >= 0.6;
+  const correct = (matchCount / betterWords.length) >= 0.5; // 放宽到50%
   const feedback = correct 
     ? "✅ 很好！你的翻译正确，表达自然。" 
-    : `❌ 再试试看。正确的表达是：“${expectedBetter}”。${explanation.substring(0, 100)}`;
-  return { correct, feedback };
+    : `❌ 再试试看。正确的表达是：“${expectedBetter}”。${S.practiceErrors[S.practiceIndex]?.explanation || ''}`;
+  return { correct, feedback, isRecError: false };
 }
 
-// 设置 Mentor 表情（用于练习屏）
-let epMentorExprInterval = null;
-function setEpMentorExpr(expr) {
+// 设置 Mentor 表情（用于练习模块）
+let epMentorExprTimer = null;
+function setEpMentorExpr(expr, duration = 2000) {
   const mentorImg = document.getElementById('epMentorSprite');
   if (!mentorImg) return;
+  let src = '';
+  if (expr === 'praise') src = MENTOR_EXPR.praise || IMGS.mentor_praise;
+  else if (expr === 'hint') src = MENTOR_EXPR.hint_smile || IMGS.mentor_hint_smile;
+  else if (expr === 'laugh') src = MENTOR_EXPR.laugh || IMGS.mentor_clap1;
+  else src = MENTOR_EXPR.greet_smile;
+  if (src) mentorImg.src = src;
+  // 如果是鼓掌，循环切换 clap1/clap2
   if (expr === 'laugh') {
-    // 循环 clap1 和 clap2
-    if (epMentorExprInterval) clearInterval(epMentorExprInterval);
-    let i = 0;
-    const claps = [IMGS.mentor_clap1, IMGS.mentor_clap2];
-    epMentorExprInterval = setInterval(() => {
-      mentorImg.src = claps[i % 2];
-      i++;
-    }, 400);
+    if (epMentorExprTimer) clearInterval(epMentorExprTimer);
+    let toggle = false;
+    epMentorExprTimer = setInterval(() => {
+      const current = mentorImg.src;
+      const clap1 = MENTOR_EXPR.laugh || IMGS.mentor_clap1;
+      const clap2 = MENTOR_EXPR.laugh_talk || IMGS.mentor_clap2;
+      if (current.includes(clap1)) mentorImg.src = clap2;
+      else mentorImg.src = clap1;
+    }, 600);
+    setTimeout(() => {
+      if (epMentorExprTimer) clearInterval(epMentorExprTimer);
+      mentorImg.src = MENTOR_EXPR.greet_smile;
+    }, duration);
   } else {
-    if (epMentorExprInterval) { clearInterval(epMentorExprInterval); epMentorExprInterval = null; }
-    if (expr === 'praise') mentorImg.src = MENTOR_EXPR.praise;
-    else if (expr === 'hint') mentorImg.src = MENTOR_EXPR.hint_smile;
-    else mentorImg.src = MENTOR_EXPR.greet_smile;
+    if (epMentorExprTimer) clearInterval(epMentorExprTimer);
+    setTimeout(() => {
+      if (mentorImg && mentorImg.src !== MENTOR_EXPR.greet_smile) {
+        mentorImg.src = MENTOR_EXPR.greet_smile;
+      }
+    }, duration);
   }
 }
 
-// 错误练习相关函数
 function startErrorPractice() {
   if (!S.practiceErrors.length && !S.myQuestionBank.length) {
     alert('没有可用的练习，请先完成一次面试。');
@@ -2233,7 +2265,7 @@ function startErrorPractice() {
   S.epWaitingForRetry = false;
   S.epCurrentExpected = '';
   showScreen('errorPracticeScreen');
-  setEpMentorExpr('greet');
+  setEpMentorExpr('greet_smile');
   if (S.epRecognition) {
     try { S.epRecognition.abort(); } catch(e) {}
   }
@@ -2251,7 +2283,7 @@ function loadPracticeItem(idx) {
     if (harderBtn) harderBtn.style.display = 'inline-flex';
     const doneBtn = document.getElementById('epDoneBtn');
     if (doneBtn) doneBtn.style.display = 'inline-flex';
-    setEpMentorExpr('laugh');
+    setEpMentorExpr('laugh', 3000);
     return;
   }
 
@@ -2264,24 +2296,35 @@ function loadPracticeItem(idx) {
   const errorOriginalEl = document.querySelector('#epErrorOriginal .ep-content');
   if (errorOriginalEl) errorOriginalEl.textContent = err.original;
   const correctionEl = document.querySelector('#epCorrection .ep-content');
-  if (correctionEl) correctionEl.innerHTML = `<strong>${err.better}</strong>`;
+  if (correctionEl) {
+    // 显示主优化表达，加粗
+    correctionEl.innerHTML = `<strong>${esc(err.better)}</strong>`;
+    // 如果有近义词组，追加显示
+    if (err.alternatives && err.alternatives.length) {
+      const altHtml = `<div style="margin-top:8px; font-size:13px; color:var(--ink-mid);">📚 其他表达方式：<br>${err.alternatives.map(a => `• ${esc(a)}`).join('<br>')}</div>`;
+      correctionEl.insertAdjacentHTML('afterend', altHtml);
+    }
+  }
   const tipEl = document.querySelector('#epTip .ep-content');
   if (tipEl) tipEl.textContent = err.explanation;
 
-  // 构建题目：从 chinese_hint 中提取中文部分和关键词
+  // 构建题目：从 chinese_hint 中提取中文句子和关键词
   let taskHtml = err.chinese_hint;
-  if (taskHtml.includes('翻译：')) {
-    taskHtml = taskHtml.replace(/^.*?翻译：/, '📝 请翻译：');
+  if (!taskHtml.includes('翻译：')) {
+    taskHtml = `📝 请翻译：${err.chinese_hint}<br><span style="font-size:14px;">提示：使用 “${err.better}” 中的关键词</span>`;
   }
   const taskDiv = document.getElementById('epTask');
   if (taskDiv) taskDiv.innerHTML = taskHtml;
 
-  // 清空反馈区域和回答区域
+  // 清空反馈和答案区域
   const feedbackDiv = document.getElementById('epFeedback');
-  if (feedbackDiv) { feedbackDiv.style.display = 'none'; feedbackDiv.innerHTML = ''; }
+  if (feedbackDiv) {
+    feedbackDiv.style.display = 'none';
+    feedbackDiv.innerHTML = '';
+    feedbackDiv.className = 'ep-feedback';
+  }
   const answerDisplay = document.getElementById('epAnswerDisplay');
   if (answerDisplay) answerDisplay.innerHTML = '';
-  
   const micStatus = document.getElementById('epMicStatus');
   if (micStatus) micStatus.innerHTML = 'Tap to speak';
   const micBtn = document.getElementById('epMicBtn');
@@ -2292,13 +2335,11 @@ function loadPracticeItem(idx) {
   if (harderBtn) harderBtn.style.display = 'none';
   const doneBtn = document.getElementById('epDoneBtn');
   if (doneBtn) doneBtn.style.display = 'none';
-  
+  const progressSpan = document.getElementById('epProgress');
+  if (progressSpan) progressSpan.textContent = `${idx+1} / ${S.practiceErrors.length}`;
   const mentorText = document.getElementById('epMentorText');
-  if (mentorText) mentorText.innerHTML = '读一读提示，然后按下麦克风练习吧！';
-  setEpMentorExpr('greet');
-  
-  const progress = document.getElementById('epProgress');
-  if (progress) progress.innerHTML = `${idx+1} / ${S.practiceErrors.length}`;
+  if (mentorText) mentorText.innerHTML = '读一读上面的提示，然后按下麦克风练习吧！';
+  setEpMentorExpr('greet_smile');
 }
 
 function initEpRecognition() {
@@ -2308,7 +2349,7 @@ function initEpRecognition() {
   r.lang = 'en-US';
   r.continuous = false;
   r.interimResults = true;
-  r.onresult = (e) => {
+  r.onresult = async (e) => {
     let final = '';
     for (let i = 0; i < e.results.length; i++) {
       final += e.results[i][0].transcript;
@@ -2327,63 +2368,61 @@ function initEpRecognition() {
   r.onend = async () => {
     const micBtn = document.getElementById('epMicBtn');
     if (micBtn) micBtn.classList.remove('recording');
-    if (S.epCurrentAnswer && S.epCurrentAnswer.trim().length > 3) {
+    if (S.epCurrentAnswer && S.epCurrentAnswer.trim().length > 2) {
       const micStatus = document.getElementById('epMicStatus');
-      if (micStatus) micStatus.innerHTML = '✔ 已记录';
-      await handleEpAnswer(S.epCurrentAnswer.trim());
+      if (micStatus) micStatus.innerHTML = 'Evaluating...';
+      const curErr = S.practiceErrors[S.practiceIndex];
+      if (curErr) {
+        const evalResult = await evaluateTranslation(
+          S.epCurrentAnswer, 
+          curErr.better, 
+          curErr.alternatives || [], 
+          curErr.original
+        );
+        const feedbackDiv = document.getElementById('epFeedback');
+        if (feedbackDiv) {
+          feedbackDiv.innerHTML = evalResult.feedback;
+          feedbackDiv.className = `ep-feedback ${evalResult.correct ? 'correct' : 'wrong'}`;
+          feedbackDiv.style.display = 'block';
+        }
+        if (evalResult.correct) {
+          // 答对，记录掌握，显示下一题按钮
+          curErr.mastered = true;
+          const mentorText = document.getElementById('epMentorText');
+          if (mentorText) mentorText.innerHTML = '👍 很好！你掌握了这个表达。点击下一题。';
+          setEpMentorExpr('praise', 1500);
+          const nextBtn = document.getElementById('epNextBtn');
+          if (nextBtn) nextBtn.style.display = 'inline-flex';
+          if (micStatus) micStatus.innerHTML = '✔ 正确';
+        } else {
+          // 答错，增加重试计数
+          curErr.retryCount = (curErr.retryCount || 0) + 1;
+          if (curErr.retryCount >= 3) {
+            // 三次失败，显示答案并自动进入下一题
+            const mentorText = document.getElementById('epMentorText');
+            if (mentorText) mentorText.innerHTML = `正确答案是：“${curErr.better}”。我们继续下一题。`;
+            setEpMentorExpr('hint', 2000);
+            const nextBtn = document.getElementById('epNextBtn');
+            if (nextBtn) nextBtn.style.display = 'inline-flex';
+            if (micStatus) micStatus.innerHTML = '⚠️ 已显示答案';
+          } else {
+            const mentorText = document.getElementById('epMentorText');
+            if (mentorText) mentorText.innerHTML = `再试试看！剩余尝试次数：${3 - curErr.retryCount}`;
+            setEpMentorExpr('hint', 1500);
+            if (micStatus) micStatus.innerHTML = '再试一次';
+            // 不清空答案区域，让用户继续尝试
+          }
+        }
+      } else {
+        const micStatus = document.getElementById('epMicStatus');
+        if (micStatus) micStatus.innerHTML = 'Tap to speak again';
+      }
     } else {
       const micStatus = document.getElementById('epMicStatus');
-      if (micStatus) micStatus.innerHTML = 'Tap to speak again';
-      setEpMentorExpr('hint');
+      if (micStatus) micStatus.innerHTML = 'Tap to speak again (too short)';
     }
   };
   return r;
-}
-
-async function handleEpAnswer(answer) {
-  const currentErr = S.practiceErrors[S.practiceIndex];
-  if (!currentErr) return;
-  
-  const feedbackDiv = document.getElementById('epFeedback');
-  const mentorText = document.getElementById('epMentorText');
-  
-  // 评估答案
-  const evalResult = await evaluateTranslation(answer, currentErr.better, currentErr.explanation);
-  
-  if (evalResult.correct) {
-    // 回答正确
-    feedbackDiv.innerHTML = evalResult.feedback;
-    feedbackDiv.className = 'ep-feedback correct';
-    feedbackDiv.style.display = 'block';
-    if (mentorText) mentorText.innerHTML = "🎉 完美！继续下一题！";
-    setEpMentorExpr('praise');
-    setTimeout(() => setEpMentorExpr('greet'), 1500);
-    // 显示下一题按钮
-    const nextBtn = document.getElementById('epNextBtn');
-    if (nextBtn) nextBtn.style.display = 'inline-flex';
-    // 记录掌握
-    currentErr.mastered = true;
-  } else {
-    // 回答错误
-    currentErr.retryCount = (currentErr.retryCount || 0) + 1;
-    feedbackDiv.innerHTML = evalResult.feedback + `<br>你还有 ${3 - currentErr.retryCount} 次重试机会。`;
-    feedbackDiv.className = 'ep-feedback wrong';
-    feedbackDiv.style.display = 'block';
-    if (currentErr.retryCount >= 3) {
-      // 超过重试次数，显示答案并强制下一题
-      feedbackDiv.innerHTML = `❌ 正确答案是：“${currentErr.better}”。<br>我们继续下一题。`;
-      if (mentorText) mentorText.innerHTML = "别灰心，多练习就会掌握。点击下一题。";
-      setEpMentorExpr('hint');
-      const nextBtn = document.getElementById('epNextBtn');
-      if (nextBtn) nextBtn.style.display = 'inline-flex';
-    } else {
-      if (mentorText) mentorText.innerHTML = `再试试看！提示：${currentErr.explanation.substring(0, 80)}`;
-      setEpMentorExpr('hint');
-      // 不清空输入，让用户再次尝试
-      const micStatus = document.getElementById('epMicStatus');
-      if (micStatus) micStatus.innerHTML = 'Tap to speak again';
-    }
-  }
 }
 
 function startEpRecording() {
@@ -2399,16 +2438,14 @@ function startEpRecording() {
   S.epCurrentAnswer = '';
   const answerDisplay = document.getElementById('epAnswerDisplay');
   if (answerDisplay) answerDisplay.innerHTML = '';
-  const feedbackDiv = document.getElementById('epFeedback');
-  if (feedbackDiv) feedbackDiv.style.display = 'none';
   const micStatus = document.getElementById('epMicStatus');
   if (micStatus) micStatus.innerHTML = 'Listening...';
   if (micBtn) micBtn.classList.add('recording');
-  setEpMentorExpr('greet');
   try { S.epRecognition.start(); } catch(e) { console.warn(e); }
 }
 
 function nextPracticeItem() {
+  // 如果当前题目未正确且未满3次重试，不允许跳过（但用户可强制跳过，我们允许）
   S.practiceIndex++;
   loadPracticeItem(S.practiceIndex);
 }
@@ -2418,7 +2455,6 @@ function finishErrorPractice() {
   if (S.epRecognition) {
     try { S.epRecognition.abort(); } catch(e) {}
   }
-  setEpMentorExpr('greet');
 }
 
 async function generateHarderPractice() {
@@ -2431,19 +2467,20 @@ async function generateHarderPractice() {
   }
   const prompt = `For each of the following phrases that the learner is still struggling with, create a more challenging version. Increase difficulty by using more complex sentence structures, advanced vocabulary, or nuanced contexts.
 
-${unmastered.map((e, i) => `${i+1}. Original better expression: "${e.better}"\n   Explanation: ${e.explanation}\n   Chinese hint: ${e.chinese_hint}`).join('\n\n')}
+${unmastered.map((e, i) => `${i+1}. Original better expression: "${e.better}"\n   Explanation: ${e.explanation}\n   Chinese hint: ${e.chinese_hint}\n   Alternatives: ${e.alternatives.join(', ')}`).join('\n\n')}
 
 Return ONLY JSON array with same length, each object: 
 {
   "original_better": "the original better expression",
   "harder_better": "a more advanced version",
   "harder_explanation": "why this is more advanced",
-  "harder_chinese_hint": "new Chinese hint to elicit the harder version"
+  "harder_chinese_hint": "new Chinese hint to elicit the harder version",
+  "harder_alternatives": ["alternative1", "alternative2"]
 }`;
 
   let harderData = [];
   if (S.apiKey) {
-    const raw = await callAPI([{ role: 'user', content: prompt }], prompt, 1200);
+    const raw = await callAPI([{ role: 'user', content: prompt }], prompt, 1500);
     if (raw) {
       try {
         harderData = JSON.parse(raw.replace(/```json|```/g, '').trim());
@@ -2451,11 +2488,13 @@ Return ONLY JSON array with same length, each object:
     }
   }
   if (!harderData.length) {
+    // fallback: 简单增加难度
     harderData = unmastered.map(e => ({
       original_better: e.better,
       harder_better: e.better.replace(/\.$/, ', which is a critical factor.'),
       harder_explanation: e.explanation + ' Also, try to connect your point to a broader implication.',
-      harder_chinese_hint: e.chinese_hint + ' 并且说明为什么这个因素很重要。'
+      harder_chinese_hint: e.chinese_hint + ' 并且说明为什么这个因素很重要。',
+      harder_alternatives: e.alternatives.map(a => a + ' in a broader sense')
     }));
   }
 
@@ -2468,6 +2507,7 @@ Return ONLY JSON array with same length, each object:
       original: orig.original,
       better: hard.harder_better,
       explanation: hard.harder_explanation,
+      alternatives: hard.harder_alternatives || [],
       chinese_hint: hard.harder_chinese_hint,
       attempts: [],
       mastered: false,
@@ -2477,7 +2517,9 @@ Return ONLY JSON array with same length, each object:
   }
   S.practiceErrors = newExercises;
   S.practiceIndex = 0;
-  saveBank([...S.myQuestionBank, ...newExercises]);
+  // 合并到题库
+  S.myQuestionBank = [...S.myQuestionBank, ...newExercises];
+  saveBank(S.myQuestionBank);
   hideLoad();
   loadPracticeItem(0);
   const harderBtn = document.getElementById('epHarderBtn');
@@ -2505,7 +2547,7 @@ if (document.readyState === 'loading') {
   bindErrorPracticeEvents();
 }
 
-/* ── WORD PRACTICE (完整保留) ── */
+/* ── WORD PRACTICE (保持不变) ── */
 $('wordPracticeBtn').addEventListener('click',()=>{
   if(!S.advancedPhrases.length && !S.myQuestionBank.length) {
     alert('No phrases to practise yet. Complete a session first.');
@@ -2625,7 +2667,7 @@ function wpDone(){
   showScreen('feedbackScreen');
 }
 
-/* ── FEEDBACK ACTIONS ── */
+/* ── FEEDBACK ACTIONS (保持原样) ── */
 $('againBtn').addEventListener('click',()=>{
   S.qIndex=0;S.retryCount=0;S.voiceState='idle';S.phase='idle';
   S._isDebate=false;S._isSmallTalk=false;S._debateRound=0;S._stTurn=0;S._stHistory=[];
@@ -2692,4 +2734,4 @@ document.addEventListener('touchstart', ()=>{
   }
 },{once:true,passive:true});
 
-console.log('🎭 Mirror & Mentor v5 — Complete with optimization practice');
+console.log('🎭 Mirror & Mentor v5 — Complete with enhanced practice');
