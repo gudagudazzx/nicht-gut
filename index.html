@@ -351,31 +351,53 @@
 <!-- ── ERROR PRACTICE (优化表达练习) ── -->
 <div id="errorPracticeScreen" class="screen">
   <div class="ep-wrap">
+    <!-- 左侧练习区 -->
     <div class="ep-left">
       <div class="ep-header">
-        <span class="ep-badge">📝 表达优化练习 · 针对你的错误</span>
+        <span class="ep-badge">📝 表达优化练习 · 汉译英</span>
         <span id="epProgress" class="ep-progress">1 / 3</span>
       </div>
-      <div id="epCard" class="ep-card">
-        <div class="ep-error-original" id="epErrorOriginal">❌ 你的原句：...</div>
-        <div class="ep-correction" id="epCorrection">✅ 更优表达：...</div>
-        <div class="ep-tip" id="epTip">💡 为什么更好</div>
+
+      <!-- 上半部分：原句 + 更优表达（左） + 原因（右） -->
+      <div class="ep-top-row">
+        <div class="ep-left-col">
+          <div class="ep-error-original" id="epErrorOriginal">
+            <span class="ep-label">你的原句：</span>
+            <span class="ep-content"></span>
+          </div>
+          <div class="ep-correction" id="epCorrection">
+            <span class="ep-label">更优表达：</span>
+            <span class="ep-content"></span>
+          </div>
+        </div>
+        <div class="ep-right-col">
+          <div class="ep-tip" id="epTip">
+            <span class="ep-label">💡 为什么更好：</span>
+            <span class="ep-content"></span>
+          </div>
+        </div>
       </div>
-      <div class="ep-prompt" id="epPrompt">
-        请根据中文提示，用英文说出更优表达：
+
+      <!-- 题目区域 -->
+      <div class="ep-task-area">
+        <div class="ep-prompt" id="epPrompt">📝 请根据中文提示，用英文说出更优表达：</div>
+        <div class="ep-task" id="epTask"></div>
+        <div class="ep-feedback" id="epFeedback" style="display:none;"></div>
       </div>
-      <div class="ep-task" id="epTask"></div>
+
+      <!-- 用户回答显示区域 -->
       <div class="ep-answer-area">
         <div class="ep-answer-label">你的回答</div>
         <div id="epAnswerDisplay" class="ep-answer-display"></div>
       </div>
     </div>
 
+    <!-- 右侧 Mentor 区 -->
     <div class="ep-right">
       <div class="ep-mentor">
         <img id="epMentorSprite" class="ep-mentor-img" src="" alt="Mentor">
         <div class="ep-mentor-bubble" id="epMentorBubble">
-          <span id="epMentorText">我会帮你优化表达。读一读左边的提示，然后对着麦克风练习～</span>
+          <span id="epMentorText">读一读提示，然后按下麦克风练习吧！</span>
         </div>
       </div>
       <div class="ep-mic-dock">
@@ -388,7 +410,6 @@
     </div>
   </div>
 </div>
-
 <!-- ── 个人题库 (My Bank) 预留，后续可扩展 ── -->
 <div id="bankScreen" class="screen" style="display:none;">
   <div class="bank-wrap">
