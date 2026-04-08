@@ -2761,4 +2761,4 @@ document.addEventListener('touchstart', ()=>{
   }
 },{once:true,passive:true});
 
-console.log('🎭 Mirror & Mentor v5 — Complete with enhanced practice');
+console.log('🎭 Prologue v5 — Complete with enhanced practice');
