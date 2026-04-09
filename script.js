@@ -2115,31 +2115,34 @@ Return ONLY valid JSON (no markdown):
 async function generateOptimizationExercises(sessionSummary) {
   if (!sessionSummary || sessionSummary === 'No recorded exchanges.') return;
 
-  const prompt = `const prompt = You are an expert English coach. Based on the conversation, create 3 DIFFICULT translation exercises.
-  IMPORTANT: Each exercise must be:
-  1. A COMPLEX Chinese sentence (10-20 words) that requires advanced/essential grammar
-  2. MUST include one specific advanced phrase in parentheses that the user must use
-  3. The sentence should test: sentence structure, collocations, and the target phrase
-  Example format:
-  {
+  const prompt = `You are an English coach. Create 3 short translation exercises based on the user's weak points.
+
+IMPORTANT RULES:
+1. Each exercise MUST have a SHORT Chinese sentence (8-15 words, no longer).
+2. The Chinese sentence MUST clearly require using the EXACT "better" phrase.
+3. "better" should be a SHORT phrase (2-5 words) OR a short sentence (max 8 words).
+4. If "better" is a phrase, the Chinese hint should be like: "请用 'xxx' 翻译：..." 
+5. Keep it simple and focused on the key expression.
+
+Example:
+{
   "original": "I think I'm good for this job.",
-  "better": "I believe my qualifications align perfectly with the requirements of this position.",
-  "explanation": "'Believe' sounds more confident than 'think', and 'align with' is more professional than 'good for'.",
-  "alternatives": ["My skill set matches this role closely.", "I am confident that my background fits this position."],
-  "chinese_hint": "请用 'align with' 翻译：我认为我的专业背景与这个职位的核心要求非常契合。"
-  }
-  Another example for "be addicted to":
-  {
-    "original": "He likes games.",
-    "better": "He became addicted to video games after getting his first console.",
-    "explanation": "'Became addicted to' shows a process and is stronger than 'likes'.",
-    "alternatives": ["He was hooked on games.", "He got obsessed with gaming."],
-    "chinese_hint": "请用 'became addicted to' 翻译：自从他买了第一台游戏机，他就沉迷于电子游戏无法自拔。"
-    }
-    Generate 3 exercises like this based on the user's weak points from the conversation.
-    Return ONLY valid JSON array.
-    Conversation:
-    ${sessionSummary}`;
+  "better": "align with",
+  "explanation": "Use 'align with' to sound professional.",
+  "alternatives": ["match", "fit"],
+  "chinese_hint": "请用 'align with' 翻译：我的技能与这个职位某种程度上非常匹配。"
+}
+
+Another example for a short sentence:
+{
+  "original": "He likes games.",
+  "better": "I'm hooked on",
+  "explanation": "Use 'hooked on' to express addiction.",
+  "alternatives": ["addicted to", "obsessed with"],
+  "chinese_hint": "请用 'I'm hooked on' 翻译：她沉迷于这个游戏而父母因此批评她。"
+}
+
+Generate 3 exercises. Return ONLY JSON array.`;
 
   let exercises = [];
   if (S.apiKey) {
@@ -2339,7 +2342,13 @@ if (correctionEl) {
     <div style="display:flex; flex-wrap:wrap; gap:12px; align-items:center;">
       ${allExpressions.map(expr => {
         const isMain = (expr === err.better);
-        return `<span style="background:${isMain ? '#E8F5E9' : '#F5F5F5'}; border:1px solid ${isMain ? '#0D7377' : '#CCCCCC'}; border-radius:30px; padding:8px 18px; font-weight:${isMain ? 'bold' : 'normal'}; font-size:14px; color:#1A5B3A;">${isMain ? `★ ${esc(expr)}` : esc(expr)}</span>`;
+        // 限制长度：如果是词组/短语，最多显示2个词？不，这里用字符数限制更简单
+        // 超过35个字符就截断加...
+        let shortExpr = expr;
+        if (shortExpr.length > 35) {
+          shortExpr = shortExpr.substring(0, 32) + '...';
+        }
+        return `<span style="background:${isMain ? '#E8F5E9' : '#F5F5F5'}; border:1px solid ${isMain ? '#0D7377' : '#CCCCCC'}; border-radius:30px; padding:8px 18px; font-weight:${isMain ? 'bold' : 'normal'}; font-size:14px; color:#1A5B3A;">${isMain ? `★ ${esc(shortExpr)}` : esc(shortExpr)}</span>`;
       }).join('')}
     </div>
     <div style="margin-top:12px; font-size:13px; color:#1A6B6B;">💡 点击麦克风练习使用这些表达</div>
@@ -2357,8 +2366,7 @@ if (correctionEl) {
     taskHtml = `📝 请翻译：${err.chinese_hint}<br><span style="font-size:14px;">提示：使用 “${err.better}” 中的关键词</span>`;
   }
   const taskDiv = document.getElementById('epTask');
-  if (taskDiv) taskDiv.innerHTML = taskHtml;
-
+if (taskDiv) taskDiv.innerHTML = taskHtml;
   // 清空反馈和答案区域
   const feedbackDiv = document.getElementById('epFeedback');
   if (feedbackDiv) {
