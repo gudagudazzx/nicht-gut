@@ -108,7 +108,6 @@ const CFG={
 };
 let speechQueue = [];
 let isSpeaking = false;
-let _typeTimer = null;  // 可能原来就有，没有就加上
 
 const S={
   scenario:'interview',
@@ -2834,5 +2833,33 @@ document.addEventListener('touchstart', ()=>{
     window.speechSynthesis.speak(u);
   }
 },{once:true,passive:true});
+// 全局函数，供 HTML 的 onclick 调用
+window.selectScenario = function(scenario) {
+  S.scenario = scenario;
+  const titles = {
+    interview: { h: 'The <em>Interview</em> Simulator', sub: "Tell us about yourself — we'll build a personalised session.", btn: '✎ Analyse &amp; Begin Interview' },
+    debate:    { h: 'The <em>Debate</em> Arena',        sub: "Pick your topic — your opponent is waiting.", btn: '🎙 Enter the Debate Arena' },
+    smalltalk: { h: 'The <em>Small Talk</em> Café',     sub: "Relax. Let's have a real conversation.", btn: '☕ Start a Conversation' },
+  };
+  const t = titles[scenario] || titles.interview;
+  const hEl = document.querySelector('.intake-h');
+  const sEl = document.querySelector('.intake-sub');
+  const bEl = document.getElementById('launchBtn');
+  if (hEl) hEl.innerHTML = t.h;
+  if (sEl) sEl.textContent = t.sub;
+  if (bEl) bEl.innerHTML = t.btn;
+
+  // 显示/隐藏 interview 专属字段
+  const intFields = document.querySelectorAll('.interview-only');
+  intFields.forEach(el => el.style.display = scenario === 'interview' ? '' : 'none');
+
+  const arena = document.getElementById('arenaScreen');
+  if (arena) {
+    arena.classList.remove('scenario-interview', 'scenario-debate', 'scenario-smalltalk');
+    arena.classList.add('scenario-' + scenario);
+  }
+
+  showScreen('intakeScreen');
+};
 
 console.log('🎭 Prologue v5 — Complete with enhanced practice');
