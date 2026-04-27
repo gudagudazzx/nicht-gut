@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Prologue — Before real communication</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ════════════════════════════════════════
+     SCREENS — only one is .active at a time
+════════════════════════════════════════════ -->
+
+<!-- ── HUB ── -->
+<div id="hubScreen" class="screen active">
+  <div class="hub-wrap">
+    <div class="hub-logo">✦ Prologue ✦</div>
+    <h1 class="hub-title">Choose Your <em>World</em></h1>
+    <p class="hub-sub">Four modes. One goal: speak English with confidence.</p>
+    <div class="scenario-grid">
+      <div class="scenario-card" onclick="selectScenario('interview')">
+        <div class="sc-accent" style="background:var(--red)"></div>
+        <div class="sc-icon">💼</div>
+        <div class="sc-name">Interview</div>
+        <div class="sc-tagline">A strict interviewer tests your background, goals, and thinking under professional pressure.</div>
+        <div class="sc-chars">
+          <span class="sc-char" style="color:var(--red);border-color:var(--red)">⚡ Interviewer</span>
+          <span class="sc-char" style="color:var(--green);border-color:var(--green)">✨ Mentor</span>
+        </div>
+        <span class="sc-badge" style="background:var(--red-dim);color:var(--red);border-color:var(--red)">CLASSIC</span>
+      </div>
+      <div class="scenario-card" onclick="selectScenario('debate')">
+        <div class="sc-accent" style="background:var(--teal)"></div>
+        <div class="sc-icon">🎙</div>
+        <div class="sc-name">Debate</div>
+        <div class="sc-tagline">An energetic opponent challenges your every argument. Stay sharp, build your case, push back.</div>
+        <div class="sc-chars">
+          <span class="sc-char" style="color:var(--teal);border-color:var(--teal)">⚡ Debater</span>
+          <span class="sc-char" style="color:var(--green);border-color:var(--green)">✨ Mentor</span>
+        </div>
+        <span class="sc-badge" style="background:var(--teal-dim);color:var(--teal);border-color:var(--teal)">NEW</span>
+      </div>
+      <div class="scenario-card" onclick="selectScenario('smalltalk')">
+        <div class="sc-accent" style="background:var(--lavender)"></div>
+        <div class="sc-icon">☕</div>
+        <div class="sc-name">Small Talk</div>
+        <div class="sc-tagline">A gentle listener draws you into real conversation. Practice natural flow, questions, and warmth.</div>
+        <div class="sc-chars">
+          <span class="sc-char" style="color:var(--lavender);border-color:var(--lavender)">🌸 Listener</span>
+          <span class="sc-char" style="color:var(--green);border-color:var(--green)">✨ Mentor</span>
+        </div>
+        <span class="sc-badge" style="background:var(--lavender-dim);color:var(--lavender);border-color:var(--lavender)">NEW</span>
+      </div>
+      <div class="scenario-card" onclick="openExpressionBank()">
+        <div class="sc-accent" style="background:var(--amber)"></div>
+        <div class="sc-icon">&#128218;</div>
+        <div class="sc-name">Expression Bank</div>
+        <div class="sc-tagline">Revisit phrases and expressions collected from your sessions. Practise them until they stick.</div>
+        <div class="sc-chars">
+          <span class="sc-char" id="bankCountChip" style="color:var(--amber);border-color:var(--amber)">0 expressions saved</span>
+        </div>
+        <span class="sc-badge" style="background:var(--amber-dim);color:var(--amber);border-color:var(--amber)">REVIEW</span>
+      </div>
+    </div>
+    <p class="hub-hint" id="hubHint" style="display:none">&#128218; You have saved expressions from previous sessions. Open the Expression Bank to practise them.</p>
+  </div>
+</div>
+
+<!-- ── INTAKE ── -->
+<div id="intakeScreen" class="screen">
+  <div class="intake-wrap">
+    <div class="logo-stamp">✦ Prologue ✦</div>
+    <h1 class="intake-h" id="intakeHeadline">The <em>Interview</em> Simulator</h1>
+    <p class="intake-sub" id="intakeSub">Answer a few questions — we'll build a personalised session.</p>
+
+    <div class="profile-banner" id="profileBanner">
+      <span class="pb-text" id="bannerText">📋 Saved profile found. Load it?</span>
+      <div class="pb-btns">
+        <button class="pb-btn pb-load" id="loadProfileBtn">Load</button>
+        <button class="pb-btn pb-dismiss" id="dismissBannerBtn">Start fresh</button>
+      </div>
+    </div>
+
+    <!-- INTERVIEW cards (hidden for debate/smalltalk) -->
+    <div class="step-card interview-only" style="animation-delay:.1s">
+      <div class="step-head"><div class="step-num">1</div>
+        <div><div class="step-title">Who are you?</div><div class="step-sub">Help the interviewer tailor their questions.</div></div>
+      </div>
+      <div class="fg"><label class="fl">Your Identity</label>
+        <div class="id-pills" id="idPills">
+          <span class="id-pill" data-id="student">&#127891; Student</span>
+          <span class="id-pill" data-id="graduate">&#127919; Recent Graduate</span>
+          <span class="id-pill" data-id="worker">&#128188; Working Professional</span>
+          <span class="id-pill" data-id="other">&#10024; Other</span>
+        </div>
+      </div>
+      <div class="fg"><label class="fl">Speciality / Major / Field</label>
+        <input class="fi" id="fiSpeciality" placeholder="e.g. Computer Science, Marketing..."/>
+      </div>
+      <div class="fg">
+        <label class="fl">Resume / CV <span style="font-size:13px;font-weight:400;color:var(--ink-dim)">(optional)</span></label>
+        <textarea class="fta" id="fiResume" rows="3" placeholder="Paste key highlights: internships, achievements, projects..."></textarea>
+      </div>
+    </div>
+    <div class="step-card interview-only" style="animation-delay:.18s">
+      <div class="step-head"><div class="step-num">2</div>
+        <div><div class="step-title">What is the interview for?</div><div class="step-sub">The more specific, the sharper the questions.</div></div>
+      </div>
+      <div class="fg"><label class="fl">Target Position / Role</label>
+        <input class="fi" id="fiPosition" placeholder="e.g. Software Engineer Intern, Student Council..."/>
+      </div>
+      <div class="fg"><label class="fl">Your Goal for This Session</label>
+        <textarea class="fta" id="fiGoal" rows="2" placeholder="e.g. I freeze on tell me about yourself. I want to practise leadership questions."></textarea>
+      </div>
+      <div class="fg"><label class="fl">Company / Organisation <span style="font-size:13px;font-weight:400;color:var(--ink-dim)">(optional)</span></label>
+        <input class="fi" id="fiCompany" placeholder="e.g. Google, McKinsey, City University..."/>
+      </div>
+      <div class="fg" style="margin-top:12px">
+        <input type="file" id="resumeFile" accept=".pdf,.doc,.docx" style="display:none">
+        <div class="fi" id="resumeBtn" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;background:var(--paper2);border:1px dashed var(--ink-faint);height:auto;min-height:40px" onclick="document.getElementById('resumeFile').click()">
+          <span id="fileNameDisplay" style="color:var(--ink-dim);font-size:14px">+ Click to attach resume (PDF/Word)</span>
+          <span style="font-size:12px;opacity:0.5">&#128206;</span>
+        </div>
+      </div>
+    </div>
+    <div class="step-card interview-only" style="animation-delay:.26s">
+      <div class="step-head"><div class="step-num">3</div>
+        <div><div class="step-title">Intensity &amp; coaching</div><div class="step-sub">Pressure level, mentor mode, and API key.</div></div>
+      </div>
+      <div class="fg"><label class="fl">Interview Intensity</label>
+        <div class="int-pills" id="intPills">
+          <div class="int-pill" data-int="gentle"><span class="pi">&#127807;</span><span class="pl">Gentle</span><span class="ps">Supportive &amp; clear</span></div>
+          <div class="int-pill on" data-int="medium"><span class="pi">&#9889;</span><span class="pl">Realistic</span><span class="ps">Professional pressure</span></div>
+          <div class="int-pill" data-int="hardcore"><span class="pi">&#128293;</span><span class="pl">Hardcore</span><span class="ps">Relentless, may cut you off!</span></div>
+        </div>
+      </div>
+      <div class="fg"><label class="fl">Mentor Coaching</label>
+        <div class="mentor-toggle-row">
+          <span class="mt-label">Have the Mentor guide you when you struggle?</span>
+          <div class="toggle-wrap" id="mentorToggle">
+            <span class="tog-opt on" data-mode="auto">&#10024; Auto</span>
+            <span class="tog-opt" data-mode="off">&#128263; Off</span>
+          </div>
+        </div>
+      </div>
+      <div class="fg">
+        <label class="fl">API Key <span style="font-size:13px;font-weight:400;color:var(--ink-dim)">(optional)</span></label>
+        <div id="apiKeyCollapsed" style="cursor:pointer;font-size:14px;color:var(--ink-dim);text-decoration:underline;margin-bottom:4px" onclick="toggleApiKey()">+ Add my own API key (saved automatically)</div>
+        <div id="apiKeyExpanded" style="display:none">
+          <input type="password" class="fi" id="fiApiKey" placeholder="DeepSeek: sk-...  or Anthropic: sk-ant-..." style="margin-bottom:8px"/>
+          <div class="api-row">
+            <span class="prov-pill" data-provider="anthropic">Anthropic</span>
+            <span class="prov-pill on" data-provider="deepseek">DeepSeek</span>
+          </div>
+          <label class="fl" style="margin-top:12px">MiniMax API Key <span style="font-size:13px;font-weight:400;color:var(--ink-dim)">(optional, unlocks AI voices)</span></label>
+          <input type="password" class="fi" id="fiMinimaxKey" placeholder="MiniMax key" style="margin-bottom:8px"/>
+        </div>
+      </div>
+    </div>
+
+    <!-- DEBATE cards (hidden for interview/smalltalk) -->
+    <div class="step-card debate-only" style="animation-delay:.1s;display:none">
+      <div class="step-head">
+        <div class="step-num debate-num">&#127925;</div>
+        <div><div class="step-title">Your motion</div><div class="step-sub">AI-generated. Refresh for a new one, or write your own.</div></div>
+      </div>
+      <div class="motion-card">
+        <div class="motion-text" id="motionText">Click to generate a motion</div>
+        <button class="motion-refresh-btn" id="motionRefreshBtn" onclick="generateDebateMotion()" title="Generate new motion">&#8635;</button>
+      </div>
+      <div class="fg" style="margin-top:10px">
+        <label class="fl">...or write your own</label>
+        <input class="fi" id="fiDebateCustom" placeholder="e.g. Homework should be abolished in schools." oninput="syncDebateMotion(this.value)"/>
+      </div>
+      <div class="fg" style="margin-top:8px">
+        <label class="fl">Your stance</label>
+        <div class="stance-pills">
+          <label class="stance-pill"><input type="radio" name="debateStance" value="for" checked><span>For -- I support this</span></label>
+          <label class="stance-pill"><input type="radio" name="debateStance" value="against"><span>Against -- I oppose this</span></label>
+          <label class="stance-pill"><input type="radio" name="debateStance" value="random"><span>Surprise me</span></label>
+        </div>
+      </div>
+    </div>
+    <div class="step-card debate-only" style="animation-delay:.18s;display:none">
+      <div class="step-head">
+        <div class="step-num debate-num">&#9889;</div>
+        <div><div class="step-title">Debate intensity</div><div class="step-sub">How hard should your opponent push back?</div></div>
+      </div>
+      <div class="int-pills" id="debateIntPills">
+        <div class="int-pill" data-int="gentle"><span class="pi">&#127807;</span><span class="pl">Friendly</span><span class="ps">Open and supportive</span></div>
+        <div class="int-pill on" data-int="medium"><span class="pi">&#9889;</span><span class="pl">Sharp</span><span class="ps">Challenges every claim</span></div>
+        <div class="int-pill" data-int="hardcore"><span class="pi">&#128293;</span><span class="pl">Ruthless</span><span class="ps">No mercy on weak logic</span></div>
+      </div>
+    </div>
+
+    <!-- SHARED API key for debate -->
+    <div class="step-card debate-only" style="animation-delay:.26s;display:none">
+      <div class="fg">
+        <label class="fl">API Key <span style="font-size:13px;font-weight:400;color:var(--ink-dim)">(optional)</span></label>
+        <div id="apiKeyCollapsedD" style="cursor:pointer;font-size:14px;color:var(--ink-dim);text-decoration:underline;margin-bottom:4px" onclick="toggleApiKeyD()">+ Add my own API key</div>
+        <div id="apiKeyExpandedD" style="display:none">
+          <input type="password" class="fi" id="fiApiKeyD" placeholder="DeepSeek / Anthropic key" style="margin-bottom:8px"/>
+          <input type="password" class="fi" id="fiMinimaxKeyD" placeholder="MiniMax key (optional)" style="margin-bottom:8px"/>
+        </div>
+      </div>
+    </div>
+
+        <div class="launch-bar">
+      <button class="btn-launch" id="launchBtn">✎ Analyse &amp; Begin My Interview</button>
+      <button class="btn-launch" id="backToHubBtn" style="background:transparent;color:var(--ink-mid);border-color:var(--ink-faint);box-shadow:none;font-size:14px;margin-top:8px;padding:10px" onclick="showScreen('hubScreen')">← Back to Scenarios</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── PREP ── -->
+<div id="prepScreen" class="screen">
+  <div class="prep-wrap">
+    <div class="prep-icon">⚙️</div>
+    <div class="prep-title" id="prepTitle">Preparing your session…</div>
+    <div class="prep-status" id="prepStatus">Analysing your profile</div>
+    <div class="prep-bar"><div class="prep-bar-fill" id="prepBarFill" style="width:0%"></div></div>
+    <div class="prep-analysis" id="prepAnalysis" style="display:none">
+      <div class="pa-label">📋 Focus Areas</div>
+      <div id="paItems"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── ARENA ── -->
+<div id="arenaScreen" class="screen">
+  <!-- Top bar -->
+  <div class="arena-topbar">
+    <div class="arena-topbar-left">
+      <span class="tb-tag" id="scenePill">INTERVIEW</span>
+      <span class="tb-tag tb-teal" id="ttsPill" style="display:none">🎙 MiniMax</span>
+      <span class="tb-tag tb-red" id="qPill">Q 1 / ?</span>
+      <span class="tb-tag tb-green" id="statusPill">In Progress</span>
+      <span class="tb-tag tb-green" id="scriptToggleBtn" style="cursor:pointer;">📜 Script: ON</span>
+    </div>
+    <button class="end-btn" id="endBtn">Finish →</button>
+  </div>
+  <div class="q-bar"><div class="q-bar-fill" id="qBarFill" style="width:0%"></div></div>
+
+  <!-- Body: left (chars + script) + right (answer + mic) -->
+  <div id="arenaBody">
+    <!-- ══ LEFT PANEL ══ -->
+    <div id="leftPanel">
+      <!-- Stage: BOTH interviewers overlap in center -->
+      <div id="stage">
+        <div id="friendlyChar" class="char-unit" style="opacity:0">
+          <img id="friendlySprite" class="char-sprite-img" src="" alt="Friendly Interviewer"/>
+        </div>
+        <div id="challChar" class="char-unit" style="opacity:0">
+          <img id="challSprite" class="char-sprite-img" src="" alt="Stern Interviewer"/>
+        </div>
+        <div id="mentorChar" class="char-unit mentor-overlay" style="opacity:0">
+          <img id="mentorSprite" class="char-sprite-img" src="" alt="Mentor"/>
+          <div class="mentor-dot" id="mentorDot"></div>
+        </div>
+      </div><!-- /stage -->
+
+      <div id="speakerBar">
+        <span id="speakerNameText">⚡  INTERVIEWER</span>
+        <span class="speaker-dot" id="speakerDot"></span>
+      </div>
+
+      <div id="scriptArea">
+        <div class="debate-topic-card" id="debateTopicCard"></div>
+        <div class="st-game-panel" id="stGamePanel">
+          <div class="st-game-words" id="stGameWords"></div>
+          <div class="st-game-actions">
+            <button class="st-game-btn" id="wordGameBtn" onclick="startWordStoryGame()">&#127922; Five-Word Story</button>
+          </div>
+        </div>
+        <div id="vntbSpeaker" class="vntb-speaker" style="display:none"></div>
+        <div id="vntbText" class="vntb-text"></div>
+      </div>
+    </div><!-- /leftPanel -->
+
+    <!-- ══ RIGHT PANEL ══ -->
+    <div id="rightPanel">
+      <div id="answerBubbleWrap">
+        <div class="answer-bubble-label">Your Answer</div>
+        <div id="answerBubble">
+          <div id="hearingDisplay"></div>
+          <div class="answer-placeholder">Tap the mic and start speaking...</div>
+        </div>
+      </div>
+
+      <div id="micDock">
+        <button id="bigMicBtn">🎙</button>
+        <div id="micStatus">Tap to speak</div>
+        <button id="skipBtn">Skip →</button>
+      </div>
+    </div><!-- /rightPanel -->
+  </div><!-- /arenaBody -->
+
+  <div id="vntextbox" style="display:none"><div></div><div></div></div>
+</div><!-- /arenaScreen -->
+
+<!-- ── FEEDBACK ── -->
+<div id="feedbackScreen" class="screen">
+  <div class="fb-wrap">
+    <div class="fb-header">
+      <div class="fb-stamp">✦ Session Complete ✦</div>
+      <div class="fb-sub" id="fbSub">Interview · 6 questions · Realistic Mode</div>
+    </div>
+
+    <div class="narrative-box" id="narrativeBox" style="display:none">
+      <div class="narrative-text" id="narrativeText"></div>
+    </div>
+
+    <div class="st-report" id="stReport">
+      <div class="st-report-title">&#10022; Conversation Report</div>
+      <div class="st-report-grid">
+        <div class="st-stat"><div class="st-stat-n" id="stStatTurns">0</div><div class="st-stat-l">Turns</div></div>
+        <div class="st-stat"><div class="st-stat-n" id="stStatQuestions">0</div><div class="st-stat-l">Questions Asked Back</div></div>
+        <div class="st-stat"><div class="st-stat-n" id="stStatTopics">0</div><div class="st-stat-l">Topics Touched</div></div>
+      </div>
+      <div class="st-moments">
+        <div class="st-moment-label">Best Moments</div>
+        <div id="stMomentsList"></div>
+      </div>
+    </div>
+    <div class="dim-grid" id="dimScores"></div>
+
+    <div class="issues-section" id="issuesSection" style="display:none">
+      <div class="section-h">⚠ Issues to Address</div>
+      <div id="issuesList"></div>
+    </div>
+
+    <div class="vocab-section" id="vocabSection" style="display:none">
+      <div class="section-h">📚 Vocabulary Upgrades</div>
+      <div id="vocabList" class="vocab-grid"></div>
+    </div>
+
+    <div class="phrases-section" id="phrasesSection" style="display:none">
+      <div class="section-h">🎓 Advanced Phrases to Practise</div>
+      <div id="phrasesList" class="phrases-grid"></div>
+    </div>
+
+    <div class="fb-cards">
+      <div class="fb-card">
+        <div class="fbc-header">
+          <div class="fbc-avatar">⚡</div>
+          <div>
+            <div class="fbc-name">Interviewer's Assessment</div>
+            <div class="fbc-role">Frank · Professional</div>
+          </div>
+        </div>
+        <div class="fbc-body" id="fbChallenger"></div>
+      </div>
+      <div class="fb-card">
+        <div class="fbc-header">
+          <div class="fbc-avatar fbc-green">✨</div>
+          <div>
+            <div class="fbc-name">A Letter from Your Mentor</div>
+            <div class="fbc-role">Warm · Encouraging</div>
+          </div>
+        </div>
+        <div class="fbc-body" id="fbMentor"></div>
+      </div>
+    </div>
+
+    <div class="fb-actions">
+      <button class="fb-btn" id="wordPracticeBtn" style="display:none">🎓 Practise Phrases</button>
+      <button class="fb-btn" id="againBtn">↩ Try Again</button>
+      <button class="fb-btn fb-secondary" id="newIntakeBtn">✦ New Session</button>
+      <button class="fb-btn" id="errorPracticeBtn" style="display: none;">&#128214; Practise Expressions</button>
+      <button class="fb-btn" id="bankBtn" style="display: none;">📚 我的题库</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── WORD PRACTICE ── -->
+<div id="wordPracticeScreen" class="screen">
+  <div class="wp-wrap">
+    <div class="wp-header">🎓 Phrase Practice</div>
+    <div id="wpProgress" class="wp-progress"></div>
+    <div id="wpPhraseCard" class="wp-card"></div>
+    <div id="wpPrompt" class="wp-prompt"></div>
+    <div id="wpTranscript" class="wp-transcript"></div>
+    <div id="wpEval" class="wp-eval" style="display:none"></div>
+    <div class="wp-actions">
+      <button id="wpMicBtn" class="wp-mic">🎙 Speak</button>
+      <div id="wpMicStatus" class="wp-mic-status">Tap to speak</div>
+      <button id="wpNextBtn" class="wp-next" style="display:none">Next →</button>
+      <button id="wpDoneBtn" class="wp-done">✓ Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── ERROR PRACTICE (优化表达练习) ── -->
+<div id="errorPracticeScreen" class="screen">
+  <div class="ep-wrap">
+    <!-- 左侧练习区 -->
+    <div class="ep-left">
+      <div class="ep-header">
+        <span class="ep-badge">📝 表达优化练习 · 汉译英</span>
+        <span id="epProgress" class="ep-progress">1 / 3</span>
+      </div>
+
+      <!-- 上半部分：原句 + 更优表达（左） + 原因（右） -->
+      <div class="ep-top-row">
+        <div class="ep-left-col">
+          <div class="ep-error-original" id="epErrorOriginal">
+            <span class="ep-label">你的原句：</span>
+            <span class="ep-content"></span>
+          </div>
+          <div class="ep-correction" id="epCorrection">
+            <span class="ep-label">更优表达：</span>
+            <span class="ep-content"></span>
+          </div>
+        </div>
+        <div class="ep-right-col">
+          <div class="ep-tip" id="epTip">
+            <span class="ep-label">💡 为什么更好：</span>
+            <span class="ep-content"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 题目区域 -->
+      <div class="ep-task-area">
+        <div class="ep-prompt" id="epPrompt">📝 请根据中文提示，用英文说出更优表达：</div>
+        <div class="ep-task" id="epTask"></div>
+        <div class="ep-feedback" id="epFeedback" style="display:none;"></div>
+      </div>
+
+      <!-- 用户回答显示区域 -->
+      <div class="ep-answer-area">
+        <div class="ep-answer-label">你的回答</div>
+        <div id="epAnswerDisplay" class="ep-answer-display"></div>
+      </div>
+    </div>
+
+    <!-- 右侧 Mentor 区 -->
+    <div class="ep-right">
+      <div class="ep-mentor">
+        <img id="epMentorSprite" class="ep-mentor-img" src="" alt="Mentor">
+        <div class="ep-mentor-bubble" id="epMentorBubble">
+          <span id="epMentorText">读一读提示，然后按下麦克风练习吧！</span>
+        </div>
+      </div>
+      <div class="ep-mic-dock">
+        <button id="epMicBtn" class="ep-mic-btn">🎙</button>
+        <div id="epMicStatus" class="ep-mic-status">Tap to speak</div>
+        <button id="epNextBtn" class="ep-next-btn" style="display: none;">➡ 下一题</button>
+        <button id="epHarderBtn" class="ep-harder-btn" style="display: none;">🔥 二次练习（更难）</button>
+        <button id="epDoneBtn" class="ep-done-btn">✓ 完成练习</button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- ── 个人题库 (My Bank) 预留，后续可扩展 ── -->
+<div id="bankScreen" class="screen" style="display:none;">
+  <div class="bank-wrap">
+    <h2>📚 我的表达题库</h2>
+    <div id="bankList"></div>
+    <button onclick="showScreen('feedbackScreen')">返回</button>
+  </div>
+</div>
+
+<!-- Loading veil -->
+<div class="loading-veil" id="loadingVeil">
+  <div class="loading-spinner"></div>
+  <div class="loading-msg" id="loadingMsg">Thinking…</div>
+</div>
+
+<script src="imgs.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
