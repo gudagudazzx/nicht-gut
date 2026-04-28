@@ -340,41 +340,26 @@
       <div id="phrasesList" class="phrases-grid"></div>
     </div>
 
-    <!-- Jude's three-panel coaching report -->
-    <div class="jude-report" id="judeReport" style="display:none">
-      <div class="jude-report-header">
-        <div class="jude-avatar">&#10024;</div>
-        <div>
-          <div class="jude-name">Jude's Coaching Report</div>
-          <div class="jude-role">Pattern Detection &middot; Honest &middot; Actionable</div>
-        </div>
-      </div>
-      <div class="jude-panels">
-        <div class="jude-panel jude-panel-good">
-          <div class="jude-panel-label">What you did well</div>
-          <div class="jude-panel-body" id="judeGood"></div>
-        </div>
-        <div class="jude-panel jude-panel-fix">
-          <div class="jude-panel-label">The one thing to fix</div>
-          <div class="jude-panel-body" id="judeFix"></div>
-        </div>
-        <div class="jude-panel jude-panel-moment">
-          <div class="jude-panel-label">A moment worth keeping</div>
-          <div class="jude-panel-body" id="judeMoment"></div>
-        </div>
-      </div>
-    </div>
-
     <div class="fb-cards">
       <div class="fb-card">
         <div class="fbc-header">
-          <div class="fbc-avatar">&#9889;</div>
+          <div class="fbc-avatar">⚡</div>
           <div>
-            <div class="fbc-name" id="challCardName">Interviewer's Assessment</div>
-            <div class="fbc-role" id="challCardRole">Frank &middot; Professional</div>
+            <div class="fbc-name">Interviewer's Assessment</div>
+            <div class="fbc-role">Frank · Professional</div>
           </div>
         </div>
         <div class="fbc-body" id="fbChallenger"></div>
+      </div>
+      <div class="fb-card">
+        <div class="fbc-header">
+          <div class="fbc-avatar fbc-green">✨</div>
+          <div>
+            <div class="fbc-name">A Letter from Your Mentor</div>
+            <div class="fbc-role">Warm · Encouraging</div>
+          </div>
+        </div>
+        <div class="fbc-body" id="fbMentor"></div>
       </div>
     </div>
 
@@ -411,8 +396,9 @@
   <div class="ep-wrap">
     <!-- 左侧练习区 -->
     <div class="ep-left">
+      <div class="ep-progress-bar"><div class="ep-progress-fill" id="epProgressFill" style="width:0%"></div></div>
       <div class="ep-header">
-        <span class="ep-badge">📝 表达优化练习 · 汉译英</span>
+        <span class="ep-badge">📝 Expression Practice &middot; 5 Exercises</span>
         <span id="epProgress" class="ep-progress">1 / 3</span>
       </div>
 
@@ -420,17 +406,17 @@
       <div class="ep-top-row">
         <div class="ep-left-col">
           <div class="ep-error-original" id="epErrorOriginal">
-            <span class="ep-label">你的原句：</span>
+            <span class="ep-label">Original (what was said)</span>
             <span class="ep-content"></span>
           </div>
           <div class="ep-correction" id="epCorrection">
-            <span class="ep-label">更优表达：</span>
+            <span class="ep-label">Target Expression</span>
             <span class="ep-content"></span>
           </div>
         </div>
         <div class="ep-right-col">
           <div class="ep-tip" id="epTip">
-            <span class="ep-label">💡 为什么更好：</span>
+            <span class="ep-label">Why it is better</span>
             <span class="ep-content"></span>
           </div>
         </div>
@@ -438,14 +424,14 @@
 
       <!-- 题目区域 -->
       <div class="ep-task-area">
-        <div class="ep-prompt" id="epPrompt">📝 请根据中文提示，用英文说出更优表达：</div>
+        <div class="ep-prompt" id="epPrompt">Translate the sentence below into English using the target expression:</div>
         <div class="ep-task" id="epTask"></div>
         <div class="ep-feedback" id="epFeedback" style="display:none;"></div>
       </div>
 
       <!-- 用户回答显示区域 -->
       <div class="ep-answer-area">
-        <div class="ep-answer-label">你的回答</div>
+        <div class="ep-answer-label">Your Answer</div>
         <div id="epAnswerDisplay" class="ep-answer-display"></div>
       </div>
     </div>
@@ -455,15 +441,15 @@
       <div class="ep-mentor">
         <img id="epMentorSprite" class="ep-mentor-img" src="" alt="Mentor">
         <div class="ep-mentor-bubble" id="epMentorBubble">
-          <span id="epMentorText">读一读提示，然后按下麦克风练习吧！</span>
+          <span id="epMentorText">Read the Chinese prompt, then tap the mic and say it in English.</span>
         </div>
       </div>
       <div class="ep-mic-dock">
         <button id="epMicBtn" class="ep-mic-btn">🎙</button>
         <div id="epMicStatus" class="ep-mic-status">Tap to speak</div>
-        <button id="epNextBtn" class="ep-next-btn" style="display: none;">➡ 下一题</button>
-        <button id="epHarderBtn" class="ep-harder-btn" style="display: none;">🔥 二次练习（更难）</button>
-        <button id="epDoneBtn" class="ep-done-btn">✓ 完成练习</button>
+        <button id="epNextBtn" class="ep-next-btn" style="display: none;">Next Exercise &rarr;</button>
+        <button id="epHarderBtn" class="ep-harder-btn" style="display: none;">&#128293; Harder Round</button>
+        <button id="epDoneBtn" class="ep-done-btn">&#10003; Finish Practice</button>
       </div>
     </div>
   </div>
